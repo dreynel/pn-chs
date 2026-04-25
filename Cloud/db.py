@@ -2,15 +2,23 @@ import mysql.connector
 from mysql.connector import Error
 from contextlib import contextmanager
 
+# DB_CONFIG = {
+#     "host":     "localhost",
+#     "database": "dbpnchs",
+#     "user":     "root",
+#     "password": "007622",
+#     "charset":  "utf8mb4",
+#     "autocommit": False,
+# }
+
 DB_CONFIG = {
-    "host":     "localhost",
+    "host":     "34.134.43.148",
     "database": "dbpnchs",
     "user":     "root",
-    "password": "007622",
+    "password": "Mlfd5rGPn$Y|-2C0",
     "charset":  "utf8mb4",
     "autocommit": False,
 }
-
 
 def get_connection():
     """Open and return a new MySQL connection."""
