@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PayCore | Attendance Kiosk</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:       #1e3a5f;
+      --navy-mid:   #2a4f80;
+      --navy-light: #e8f0fb;
+      --accent:     #c8973a;
+      --bg:         #f4f6fa;
+      --surface:    #ffffff;
+      --text:       #1a1a2e;
+      --muted:      #5a6272;
+      --border:     #e2ddd6;
+      --green:      #10b981;
+      --red:        #ef4444;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .kiosk-header {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      padding: 24px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .brand-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #a87620);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 14px rgba(200,151,58,0.4);
+    }
+    .brand-text { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--navy); }
+    
+    .btn-exit {
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: rgba(30,58,95,0.06);
+      color: var(--navy-mid);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .btn-exit:hover { background: rgba(30,58,95,0.12); }
+
+    /* ── Main Panel ── */
+    .panel {
+      background: var(--surface);
+      border-radius: 24px;
+      box-shadow: 0 20px 40px rgba(30,58,95,0.08);
+      padding: 40px 50px;
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .clock-display {
+      font-family: 'Playfair Display', serif;
+      font-size: 5.5rem;
+      font-weight: 700;
+      color: var(--navy);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .date-display {
+      font-size: 1.25rem;
+      color: var(--muted);
+      margin-bottom: 40px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 500;
+    }
+
+    /* ── Toggles ── */
+    .toggle-group {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      width: 100%;
+      margin-bottom: 40px;
+    }
+    .toggle-btn {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 16px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+    }
+    .toggle-btn .icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      transition: all 0.2s;
+    }
+    .toggle-btn .label {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .toggle-btn .sub {
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Active States */
+    .toggle-btn.active {
+      border-color: var(--navy);
+      background: var(--navy-light);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(30,58,95,0.12);
+    }
+    .toggle-btn.active .icon {
+      background: var(--navy);
+      color: white;
+    }
+    .toggle-btn.active::after {
+      content: '';
+      position: absolute;
+      top: -2px; left: -2px; right: -2px; bottom: -2px;
+      border-radius: 18px;
+      border: 3px solid rgba(42, 79, 128, 0.2);
+    }
+
+    /* ── Scanner Area ── */
+    .scanner-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .fingerprint-icon {
+      width: 80px; height: 80px;
+      color: var(--muted);
+      margin-bottom: 20px;
+      transition: color 0.3s, transform 0.3s;
+    }
+    .fingerprint-icon.scanning {
+      color: var(--accent);
+      animation: pulse 1.5s infinite;
+    }
+    .fingerprint-icon.success {
+      color: var(--green);
+      transform: scale(1.1);
+    }
+    .fingerprint-icon.error {
+      color: var(--red);
+      animation: shake 0.4s;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    .status-text {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--navy);
+      height: 36px;
+    }
+    .status-sub {
+      font-size: 1rem;
+      color: var(--muted);
+      margin-top: 8px;
+      height: 24px;
+    }
+
+    /* ── Overlay Toasts ── */
+    .toast-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(30,58,95,0.4);
+      backdrop-filter: blur(8px);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .toast-overlay.show { opacity: 1; pointer-events: auto; }
+    
+    .toast-card {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 40px 60px;
+      text-align: center;
+      transform: translateY(20px) scale(0.95);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.15);
+    }
+    .toast-overlay.show .toast-card { transform: translateY(0) scale(1); }
+    
+    .toast-icon {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .toast-icon.success { background: #ecfdf5; color: var(--green); border: 2px solid #a7f3d0; }
+    .toast-icon.error { background: #fef2f2; color: var(--red); border: 2px solid #fecaca; }
+    
+    .toast-title { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--navy); margin-bottom: 8px; }
+    .toast-msg { font-size: 1.2rem; color: var(--muted); }
+
+  </style>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+
+  <div class="kiosk-header">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <div class="brand-text">PNCHS Attendance</div>
+    </div>
+    <a href="/dashboard" class="btn-exit" onclick="stopScanner()">Exit Kiosk</a>
+  </div>
+
+  <div class="panel">
+    <div class="clock-display" id="clock">00:00:00</div>
+    <div class="date-display" id="date">Loading Date...</div>
+
+    <div class="toggle-group" id="toggles">
+      <!-- AM IN -->
+      <div class="toggle-btn active" data-type="am_time_in">
+        <div class="icon">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
+        </div>
+        <div>
+          <div class="label">Time In</div>
+          <div class="sub">Morning (AM)</div>
+        </div>
+      </div>
+      <!-- AM OUT -->
+      <div class="toggle-btn" data-type="am_time_out">
+        <div class="icon">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        </div>
+        <div>
+          <div class="label">Time Out</div>
+          <div class="sub">Morning (AM)</div>
+        </div>
+      </div>
+      <!-- PM IN -->
+      <div class="toggle-btn" data-type="pm_time_in">
+        <div class="icon">
+           <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
+        </div>
+        <div>
+          <div class="label">Time In</div>
+          <div class="sub">Afternoon (PM)</div>
+        </div>
+      </div>
+      <!-- PM OUT -->
+      <div class="toggle-btn" data-type="pm_time_out">
+        <div class="icon">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        </div>
+        <div>
+          <div class="label">Time Out</div>
+          <div class="sub">Afternoon (PM)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scanner-area">
+      <svg class="fingerprint-icon scanning" id="fpIcon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/>
+      </svg>
+      <div class="status-text" id="statusText">Ready to Scan</div>
+      <div class="status-sub" id="statusSub">Please place your finger on the scanner</div>
+    </div>
+  </div>
+
+  <div class="toast-overlay" id="toast">
+    <div class="toast-card">
+      <div class="toast-icon success" id="toastIcon">
+        <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <div class="toast-title" id="toastTitle">Logged Successfully</div>
+      <div class="toast-msg" id="toastMsg">John Lenard (AM Time In)</div>
+    </div>
+  </div>
+
+  <script>
+    // ── Clock ───────────────────────────────────────────
+    function updateClock() {
+      const now = new Date();
+      let hours = now.getHours();
+      let minutes = now.getMinutes();
+      let seconds = now.getSeconds();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      
+      hours = hours % 12;
+      hours = hours ? hours : 12; // the hour '0' should be '12'
+      
+      const strTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} ${ampm}`;
+      $('#clock').text(strTime);
+      
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      $('#date').text(now.toLocaleDateString('en-US', options));
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ── Toggles ─────────────────────────────────────────
+    let currentLogType = 'am_time_in';
+    $('.toggle-btn').on('click', function() {
+      $('.toggle-btn').removeClass('active');
+      $(this).addClass('active');
+      currentLogType = $(this).data('type');
+    });
+
+    // ── Scanner Polling ─────────────────────────────────
+    let lastScanTimestamp = 0;
+    let lastErrorTimestamp = 0;
+    let pollInterval = null;
+
+    function startScanner() {
+      $.post('/api/attendance/start', function() {
+        pollInterval = setInterval(pollBackend, 1000);
+      }).fail(function() {
+        $('#statusText').text("Scanner Offline").css('color', 'var(--red)');
+        $('#fpIcon').removeClass('scanning').addClass('error');
+      });
+    }
+
+    function stopScanner() {
+      if (pollInterval) clearInterval(pollInterval);
+      $.post('/api/attendance/stop');
+    }
+
+    function pollBackend() {
+      $.get('/api/attendance/poll', function(res) {
+        if (res.status === 'running') {
+          // Initialize local timestamp from server time on the first valid poll
+          if (lastScanTimestamp === 0 && res.server_time) {
+            lastScanTimestamp = res.server_time;
+          }
+
+          if (res.last_scan && res.last_scan.timestamp > lastScanTimestamp) {
+            lastScanTimestamp = res.last_scan.timestamp;
+            // We got a new scan! Log it.
+            logAttendance(res.last_scan.employee_id, res.last_scan.name);
+          }
+          if (res.last_error && res.last_error.timestamp > lastErrorTimestamp) {
+            lastErrorTimestamp = res.last_error.timestamp;
+            // Recognized finger check failed
+            showToast('Not Recognized', res.last_error.message, true);
+          }
+        } else if (res.status === 'error') {
+          $('#statusText').text("Scanner Error").css('color', 'var(--red)');
+          $('#fpIcon').removeClass('scanning').addClass('error');
+        } else if (res.status === 'stopped') {
+           // Auto-restart if we want it to be resilient
+           setTimeout(() => {
+               $.post('/api/attendance/start');
+           }, 2000);
+        }
+      });
+    }
+
+    function logAttendance(empId, empName) {
+      // Pause visual scanning
+      $('#fpIcon').removeClass('scanning').addClass('success');
+      $('#statusText').text(`Identifying...`);
+      
+      const typeLabels = {
+        'am_time_in': 'AM Time In',
+        'am_time_out': 'AM Time Out',
+        'pm_time_in': 'PM Time In',
+        'pm_time_out': 'PM Time Out'
+      };
+
+      $.post(JSON.stringify({ employee_id: empId, log_type: currentLogType }), function(config) {
+          return {
+              url: '/api/attendance/log',
+              contentType: 'application/json',
+              data: config
+          };
+      }(), function(response) {
+         showToast('Success', `${empName} — ${typeLabels[currentLogType]}`);
+      }).fail(function(xhr) {
+         showToast('Error', (xhr.responseJSON && xhr.responseJSON.error) || 'Failed to record attendance', true);
+      });
+    }
+
+    function showToast(title, msg, isError = false) {
+      $('#toastTitle').text(title);
+      $('#toastMsg').text(msg);
+      
+      const $icon = $('#toastIcon');
+      if (isError) {
+        $icon.removeClass('success').addClass('error').html('<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>');
+      } else {
+        $icon.removeClass('error').addClass('success').html('<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>');
+      }
+      
+      $('#toast').addClass('show');
+      
+      setTimeout(() => {
+        $('#toast').removeClass('show');
+        $('#fpIcon').removeClass('success').removeClass('error').addClass('scanning');
+        $('#statusText').text("Ready to Scan");
+      }, 3500);
+    }
+
+    // Handle normal AJAX POST correctly
+    $.ajaxSetup({
+      contentType: "application/json; charset=utf-8"
+    });
+    
+    // Override logAttendance logic to properly use $.ajax
+    function logAttendance(empId, empName) {
+      // Pause visual scanning
+      $('#fpIcon').removeClass('scanning').addClass('success');
+      $('#statusText').text(`Identifying...`);
+      
+      const typeLabels = {
+        'am_time_in': 'AM Time In',
+        'am_time_out': 'AM Time Out',
+        'pm_time_in': 'PM Time In',
+        'pm_time_out': 'PM Time Out'
+      };
+
+      $.ajax({
+          url: '/api/attendance/log',
+          type: 'POST',
+          data: JSON.stringify({ employee_id: empId, log_type: currentLogType }),
+          success: function() {
+             showToast('Success', `${empName} — ${typeLabels[currentLogType]}`);
+          },
+          error: function(xhr) {
+             showToast('Error', (xhr.responseJSON && xhr.responseJSON.error) || 'Failed to record attendance', true);
+          }
+      });
+    }
+
+    // Start scanner on load
+    $(document).ready(function() {
+      startScanner();
+    });
+
+  </script>
+</body>
+</html>

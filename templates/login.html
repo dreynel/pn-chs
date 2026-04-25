@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PNCHS — Sign In</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:      #1e3a5f;
+      --navy-mid:  #2a4f80;
+      --navy-light:#e8f0fb;
+      --accent:    #c8973a;
+      --accent-dim:rgba(200,151,58,0.12);
+      --bg:        #f5f4f0;
+      --surface:   #ffffff;
+      --border:    #e2ddd6;
+      --text:      #1a1a2e;
+      --muted:     #6b6b80;
+      --muted2:    #9f9fae;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      color: var(--text);
+    }
+
+    /* Subtle dot grid background */
+    body::before {
+      content:'';
+      position:fixed; inset:0; z-index:0; pointer-events:none;
+      background-image: radial-gradient(circle, rgba(30,58,95,0.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    /* Left panel */
+    .left-panel {
+      width: 100%;
+      background: var(--navy);
+      position: relative;
+      display: flex; flex-direction: column;
+      justify-content: space-between;
+      padding: 44px 52px;
+      overflow: hidden;
+
+      flex:1; display:flex; align-items:center; justify-content:center;
+      padding: 40px 32px; position:relative; z-index:1;
+    }
+
+    /* Geometric decorative shapes */
+    .left-panel::before {
+      content:'';
+      position:absolute; bottom:-80px; right:-80px;
+      width:380px; height:380px; border-radius:50%;
+      border: 60px solid rgba(255,255,255,0.04);
+      pointer-events:none;
+    }
+    .left-panel::after {
+      content:'';
+      position:absolute; top:60px; right:60px;
+      width:180px; height:180px; border-radius:50%;
+      border: 30px solid rgba(200,151,58,0.15);
+      pointer-events:none;
+    }
+
+    .l-brand { display:flex; align-items:center; gap:12px; }
+    .l-brand-icon {
+      width:42px; height:42px; border-radius:12px;
+      background: linear-gradient(135deg, var(--accent), #a87620);
+      display:flex; align-items:center; justify-content:center;
+      box-shadow: 0 4px 16px rgba(200,151,58,0.4);
+    }
+    .l-brand-icon svg { width:22px; height:22px; color:#fff; }
+    .l-brand-name { font-family:'Playfair Display', serif; font-size:1.5rem; color:#fff; letter-spacing:-.01em; }
+    .l-brand-tag {
+      font-size:9px; text-transform:uppercase; letter-spacing:.14em;
+      color:var(--accent); background:rgba(200,151,58,0.15);
+      border:1px solid rgba(200,151,58,0.3);
+      padding:3px 8px; border-radius:20px; margin-top:3px;
+    }
+
+    .l-middle { position:relative; z-index:1; }
+    .l-pill {
+      display:inline-flex; align-items:center; gap:6px;
+      background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14);
+      border-radius:20px; padding:5px 12px; margin-bottom:24px;
+      font-size:11px; color:rgba(255,255,255,0.7); letter-spacing:.06em;
+    }
+    .l-pill-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); }
+    .l-headline {
+      font-family:'Playfair Display', serif;
+      font-size:3.2rem; line-height:1.15; color:#fff; margin-bottom:18px;
+      font-weight:700; letter-spacing:-.02em;
+    }
+    .l-headline em { font-style:italic; color:var(--accent); }
+    .l-desc { font-size:14px; color:rgba(255,255,255,0.5); line-height:1.75; max-width:380px; font-weight:300; }
+
+    .l-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:36px; }
+    .l-stat {
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.1);
+      border-radius:12px; padding:14px 16px;
+    }
+    .l-stat-val { font-family:'Playfair Display',serif; font-size:1.5rem; color:#fff; }
+    .l-stat-lbl { font-size:10px; color:rgba(255,255,255,0.4); margin-top:3px; text-transform:uppercase; letter-spacing:.08em; }
+
+    .l-features { margin-top:28px; display:flex; flex-direction:column; gap:10px; }
+    .l-feat { display:flex; align-items:center; gap:10px; font-size:13px; color:rgba(255,255,255,0.5); }
+    .l-feat-check {
+      width:20px; height:20px; border-radius:6px; flex-shrink:0;
+      background:rgba(200,151,58,0.18); border:1px solid rgba(200,151,58,0.3);
+      display:flex; align-items:center; justify-content:center; color:var(--accent);
+    }
+
+    .l-footer { font-size:11px; color:rgba(255,255,255,0.25); position:relative; z-index:1; }
+
+    /* Right panel */
+    .right-panel {
+      flex:1; display:flex; align-items:center; justify-content:center;
+      padding: 40px 32px; position:relative; z-index:1;
+    }
+    .form-card {
+      margin-top: 1.5rem;
+      width:30% !important; max-width:420px;
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:20px;
+      padding:36px 32px;
+      box-shadow: 0 4px 40px rgba(30,58,95,0.1), 0 1px 3px rgba(30,58,95,0.08);
+    }
+
+    .form-welcome { margin-bottom:28px; }
+    .form-welcome h2 {
+      font-family:'Playfair Display', serif;
+      font-size:1.8rem; color:var(--navy); margin-bottom:4px;
+    }
+    .form-welcome p { font-size:13px; color:var(--muted2); }
+
+    .form-label {
+      font-size:10.5px; text-transform:uppercase; letter-spacing:.1em;
+      color:var(--muted); font-weight:600; display:block; margin-bottom:6px;
+    }
+    .form-input {
+      width:100%; padding:10px 12px;
+      background:#fafaf8;
+      border:1.5px solid var(--border);
+      border-radius:10px;
+      font-size:13.5px; color:var(--text);
+      font-family:inherit;
+      outline:none; transition:border-color 0.18s, box-shadow 0.18s, background 0.18s;
+    }
+    .form-input::placeholder { color:var(--muted2); }
+    .form-input:focus {
+      border-color: var(--navy-mid);
+      background:#fff;
+      box-shadow: 0 0 0 3px rgba(42,79,128,0.1);
+    }
+
+    .form-group { margin-bottom:16px; }
+    .form-group-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+    .forgot-link { font-size:11.5px; color:var(--navy-mid); text-decoration:none; font-weight:500; }
+    .forgot-link:hover { color:var(--accent); }
+
+    .pass-wrap { position:relative; }
+    .pass-toggle {
+      position:absolute; right:10px; top:50%; transform:translateY(-50%);
+      background:none; border:none; cursor:pointer; color:var(--muted2);
+      transition:color 0.15s; padding:2px;
+    }
+    .pass-toggle:hover { color:var(--navy); }
+    .pass-toggle svg { width:16px; height:16px; }
+
+    .remember-row { display:flex; align-items:center; gap:8px; margin-bottom:22px; }
+    .remember-row input { accent-color: var(--navy-mid); width:15px; height:15px; cursor:pointer; }
+    .remember-row label { font-size:12.5px; color:var(--muted); cursor:pointer; }
+
+    .btn-signin {
+      width:100%; padding:12px;
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+      color:#fff; border:none; border-radius:10px;
+      font-size:13.5px; font-weight:600; font-family:inherit;
+      cursor:pointer; position:relative; overflow:hidden;
+      transition:transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 16px rgba(30,58,95,0.35);
+    }
+    .btn-signin::after {
+      content:''; position:absolute; top:0; left:-100%; width:100%; height:100%;
+      background:linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      transition:left 0.5s;
+    }
+    .btn-signin:hover { transform:translateY(-1px); box-shadow:0 6px 22px rgba(30,58,95,0.4); }
+    .btn-signin:hover::after { left:100%; }
+
+    .divider { display:flex; align-items:center; gap:10px; margin:18px 0 14px; }
+    .divider-line { flex:1; height:1px; background:var(--border); }
+    .divider-label { font-size:10.5px; color:var(--muted2); text-transform:uppercase; letter-spacing:.1em; }
+
+    .demo-card {
+      border:1.5px dashed var(--border);
+      border-radius:10px; overflow:hidden;
+    }
+    .demo-row {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:9px 12px; transition:background 0.12s;
+    }
+    .demo-row + .demo-row { border-top:1px solid var(--border); }
+    .demo-role { font-size:11.5px; font-weight:600; color:var(--navy); }
+    .demo-creds { font-size:10.5px; color:var(--muted2); margin-top:1px; }
+    .demo-use {
+      font-size:11px; font-weight:600; color:var(--navy-mid);
+      background:var(--navy-light); border:none; border-radius:6px;
+      padding:4px 10px; cursor:pointer; transition:background 0.12s;
+    }
+    .demo-use:hover { background:#d0dff5; }
+
+    .form-footer { text-align:center; margin-top:16px; font-size:11px; color:var(--muted2); }
+
+    .flash-error {
+      display:flex; align-items:start; gap:8px;
+      background:#fef3f2; border:1.5px solid #fcc; border-radius:10px;
+      padding:10px 12px; margin-bottom:16px;
+      font-size:12.5px; color:#b42318;
+    }
+    .flash-error svg { width:15px; height:15px; flex-shrink:0; margin-top:1px; }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    .fade-up { animation:fadeUp 0.5s ease forwards; }
+    .d1 { animation-delay:0.05s; opacity:0; }
+    .d2 { animation-delay:0.12s; opacity:0; }
+    .d3 { animation-delay:0.2s; opacity:0; }
+    .d4 { animation-delay:0.28s; opacity:0; }
+    .d5 { animation-delay:0.36s; opacity:0; }
+
+ 
+  </style>
+</head>
+<body>
+
+  <!-- Left Panel -->
+  <div class="left-panel">
+    <div class="l-brand fade-up d1">
+      <div class="l-brand-icon">
+        <svg fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+      <div>
+        <div class="l-brand-name">PNCHS</div>
+        <div class="l-brand-tag">School Payroll System</div>
+      </div>
+    </div>
+
+
+    <div class="form-card container">
+
+      <div class="form-welcome fade-up d1">
+        <h2>Welcome back</h2>
+        <p>Sign in to your school payroll dashboard</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+          <div class="flash-error fade-up">
+            <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+            {{ message }}
+          </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('login') }}">
+        <div class="form-group fade-up d2">
+          <label class="form-label">Username / Email</label>
+          <input type="text" name="email" class="form-input" placeholder="admin or you@school.edu.ph" required value="{{ request.form.get('email','') }}">
+        </div>
+
+        <div class="form-group fade-up d3">
+          <div class="form-group-row">
+            <label class="form-label" style="margin:0;">Password</label>
+            <a href="#" class="forgot-link">Forgot password?</a>
+          </div>
+          <div class="pass-wrap">
+            <input type="password" name="password" id="passInput" class="form-input" placeholder="••••••••" required style="padding-right:38px;">
+            <button type="button" class="pass-toggle" onclick="togglePass()">
+              <svg id="eyeIcon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </button>
+          </div>
+        </div>
+
+ 
+        <button type="submit" class="btn-signin fade-up d4">Sign In</button>
+      </form>
+
+      <div class="divider fade-up d4">
+        <div class="divider-line"></div>
+        <span class="divider-label">Demo Credentials</span>
+        <div class="divider-line"></div>
+      </div>
+
+      <div class="demo-card fade-up d5">
+        <div class="demo-row">
+          <div>
+            <div class="demo-role">Administrator</div>
+            <div class="demo-creds">admin · admin123</div>
+          </div>
+          <button type="button" class="demo-use" onclick="fillDemo('admin','admin123')">Use →</button>
+        </div>
+        <div class="demo-row">
+          <div>
+            <div class="demo-role">Finance Department</div>
+            <div class="demo-creds">finance · finance123</div>
+          </div>
+          <button type="button" class="demo-use" onclick="fillDemo('finance','finance123')">Use →</button>
+        </div>
+        <div class="demo-row">
+          <div>
+            <div class="demo-role">Faculty Employee</div>
+            <div class="demo-creds">bjohnlenard@gmail.com · EMP-001</div>
+          </div>
+          <button type="button" class="demo-use" onclick="fillDemo('bjohnlenard@gmail.com','EMP-001')">Use →</button>
+        </div>
+      </div>
+
+      <div class="form-footer">Secured with 256-bit AES · SOC 2 Type II Compliant</div>
+    </div>
+   
+    <div class="l-footer fade-up d5">© 2026 PNCHS Payroll System.</div>
+  </div>
+
+ 
+
+  <script>
+    function togglePass() {
+      const i = document.getElementById('passInput');
+      i.type = i.type === 'password' ? 'text' : 'password';
+    }
+    function fillDemo(email, pass) {
+      document.querySelector('input[name="email"]').value = email;
+      document.querySelector('input[name="password"]').value = pass;
+    }
+  </script>
+</body>
+</html>
