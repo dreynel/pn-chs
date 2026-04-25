@@ -1,46 +1,8 @@
-import threading
-import time
 import datetime
 from flask import Blueprint, jsonify, request
 from db import db_cursor
 
-# Import unified global scanner manager
-from routes.scanner_manager import KIOSK_STATE, state_lock, start_device_thread, stop_device_thread
-
 attendance_bp = Blueprint('attendance', __name__, url_prefix='/api/attendance')
-
-# Helper function kiosk_thread has been removed – we now use start_device_thread()
-
-
-
-@attendance_bp.route('/start', methods=['POST'])
-def start_kiosk():
-    with state_lock:
-        # Clear stale scans so the frontend doesn't process them on reload
-        KIOSK_STATE['last_scan'] = None
-        KIOSK_STATE['last_error'] = None
-        
-    start_device_thread()
-    return jsonify({'message': 'Kiosk/Scanner background thread started'})
-
-
-@attendance_bp.route('/stop', methods=['POST'])
-def stop_kiosk():
-    # Only stop the manager if we actually want the scanner fully completely offline. 
-    # Usually we leave it running or rely on enrollment pausing it.
-    # stop_device_thread() 
-    return jsonify({'message': 'Kiosk stopping instruction noted.'})
-
-
-
-@attendance_bp.route('/poll', methods=['GET'])
-def poll_kiosk():
-    return jsonify({
-        'status': KIOSK_STATE['status'],
-        'last_scan': KIOSK_STATE['last_scan'],
-        'last_error': KIOSK_STATE['last_error'],
-        'server_time': time.time()
-    })
 
 
 @attendance_bp.route('/log', methods=['POST'])
