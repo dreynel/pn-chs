@@ -178,6 +178,17 @@ CREATE TABLE IF NOT EXISTS tblstatutory_registry (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 """
 
+DDL_ENROLLMENT_TASKS = """
+CREATE TABLE IF NOT EXISTS tblenrollment_tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id VARCHAR(20) NOT NULL,
+    finger_index INT DEFAULT 1,
+    status VARCHAR(20) DEFAULT 'pending',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_enroll_task_emp FOREIGN KEY (employee_id) REFERENCES tblemployee(employee_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+"""
+
 def _add_column_if_missing(cur, table, column, alter_sql):
     """Add a column only if it doesn't already exist (compatible with all MySQL versions)."""
     cur.execute(
@@ -206,6 +217,7 @@ def init():
         cur.execute(DDL_LEAVES)
         cur.execute(DDL_GLOBAL_PAYHEADS)
         cur.execute(DDL_STATUTORY_REGISTRY)
+        cur.execute(DDL_ENROLLMENT_TASKS)
 
         # ── Safe column migrations (works on all MySQL versions) ───────────────
         migrations = [

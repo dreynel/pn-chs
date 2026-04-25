@@ -167,12 +167,5 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-
-@app.route('/kiosk')
-@login_required
-def kiosk():
-    return render_template('kiosk.html')
-
-
 if __name__ == '__main__':
     app.run(debug=True)
