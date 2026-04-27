@@ -220,6 +220,7 @@ def delete_employee(emp_id):
             cur.execute("DELETE FROM tblpayroll_details WHERE employee_id=%s", (emp_id,))
             cur.execute("DELETE FROM fingerprints WHERE employee_id=%s", (emp_id,))
             cur.execute("DELETE FROM tblbiometric_logs WHERE employee_id=%s", (emp_id,))
+            cur.execute("DELETE FROM tbltime_logs WHERE employee_id=%s", (emp_id,))
             cur.execute("DELETE FROM tblleaves WHERE employee_id=%s", (emp_id,))
             cur.execute("DELETE FROM tblenrollment_tasks WHERE employee_id=%s", (emp_id,))
             cur.execute("DELETE FROM tblusers WHERE employee_id=%s", (emp_id,))
