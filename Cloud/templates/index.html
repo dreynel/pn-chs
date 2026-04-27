@@ -317,7 +317,7 @@
       </a>
       {% endif %}
 
-      {% if user.role in ['Finance', 'HR'] %}
+      {% if user.role == 'HR' %}
       <a href="#" class="nav-item" onclick="navigate(event, this, 'Employees', '/pages/employee.html')">
         <div class="nav-icon">
           <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
@@ -352,7 +352,7 @@
       </a>
       {% endif %}
 
-      {% if user.role in ['Admin', 'Finance'] %}
+      {% if user.role == 'Finance' %}
       <a href="#" class="nav-item" onclick="navigate(event, this, 'Global Registry', '/pages/registry.html')">
         <div class="nav-icon">
           <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">

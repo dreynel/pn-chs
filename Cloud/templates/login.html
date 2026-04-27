@@ -236,16 +236,24 @@
     .d5 { animation-delay:0.36s; opacity:0; }
 
     @media (max-width: 768px) {
-      .left-panel {
-        padding: 24px;
+      body {
         flex-direction: column;
-        justify-content: flex-start;
-        overflow-y: auto;
+      }
+      .left-panel {
+        padding: 30px 24px;
+        flex: none;
+      }
+      .l-headline { font-size: 2.2rem; }
+      .l-stats { grid-template-columns: 1fr; }
+      
+      .right-panel {
+        padding: 20px;
+        align-items: flex-start;
       }
       .form-card {
         width: 100% !important;
         max-width: 100%;
-        margin-top: 30px;
+        margin-top: 10px;
         padding: 24px 20px;
       }
       .l-headline {
