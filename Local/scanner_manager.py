@@ -5,7 +5,7 @@ import requests
 import os
 from pyzkfp import ZKFP2
 
-CLOUD_API_URL = os.environ.get('CLOUD_API_URL', 'http://127.0.0.1:5000')
+CLOUD_API_URL = os.environ.get('CLOUD_API_URL', 'https://pn-chs.onrender.com')
 
 MATCH_THRESHOLD = 55
 
@@ -22,13 +22,14 @@ _thread_handle = None
 _running = False
 
 def sync_fingerprints_from_cloud():
-    """Fetch all fingerprints from the cloud."""
+    """Fetch all fingerprints directly from the live database."""
     try:
-        resp = requests.get(f"{CLOUD_API_URL}/api/fingerprint/kiosk_sync", timeout=5)
-        if resp.ok:
-            data = resp.json()
+        from db import db_cursor
+        with db_cursor() as (conn, cur):
+            cur.execute("SELECT id, employee_id, user_name, fingerprint_template FROM fingerprints")
+            data = cur.fetchall()
             users = []
-            for r in data.get('fingerprints', []):
+            for r in data:
                 try:
                     template_bytes = base64.b64decode(r['fingerprint_template'])
                     users.append((r['id'], r['employee_id'], r['user_name'], template_bytes))
@@ -55,9 +56,9 @@ def _scanner_loop():
             _running = False
         return
 
-    # Load existing fingerprints from Cloud into the device
+    # Load existing fingerprints from Database into the device
     id_map = {}
-    print("Syncing fingerprints from Cloud...")
+    print("Syncing fingerprints from Database...")
     users = sync_fingerprints_from_cloud()
     for row_id, emp_id, user_name, template in users:
         try:
@@ -84,11 +85,12 @@ def _scanner_loop():
             # Poll for tasks every iteration if not currently enrolling
             if not enroll_task:
                 try:
-                    r = requests.get(f"{CLOUD_API_URL}/api/fingerprint/poll_tasks", timeout=1)
-                    if r.ok:
-                        data = r.json()
-                        if data.get('task'):
-                            enroll_task = data['task']
+                    from db import db_cursor
+                    with db_cursor() as (conn, cur):
+                        cur.execute("SELECT id, employee_id, finger_index FROM tblenrollment_tasks WHERE status='pending' ORDER BY id ASC LIMIT 1")
+                        task = cur.fetchone()
+                        if task:
+                            enroll_task = task
                             enroll_templates = []
                             enroll_step = 1
                             print(f"Discovered new enrollment task: {enroll_task}")
@@ -111,10 +113,10 @@ def _scanner_loop():
                             if score >= MATCH_THRESHOLD:
                                 matched_name = id_map.get(fid, {}).get('name', 'Unknown')
                                 print(f"Error: Fingerprint already enrolled for '{matched_name}' (score: {score}).")
-                                requests.post(f"{CLOUD_API_URL}/api/fingerprint/enroll_complete", json={
-                                    'task_id': enroll_task['id'],
-                                    'error': f'Fingerprint maps to {matched_name}'
-                                })
+                                try:
+                                    with db_cursor(commit=True) as (conn, cur):
+                                        cur.execute("UPDATE tblenrollment_tasks SET status='error' WHERE id=%s", (enroll_task['id'],))
+                                except Exception: pass
                                 enroll_task = None
                                 time.sleep(2)
                                 continue
@@ -129,10 +131,11 @@ def _scanner_loop():
                     merged_template, merged_len = zkfp.DBMerge(*enroll_templates)
                     if merged_template is None or merged_len == 0:
                         print("Failed to merge templates.")
-                        requests.post(f"{CLOUD_API_URL}/api/fingerprint/enroll_complete", json={
-                            'task_id': enroll_task['id'],
-                            'error': 'Failed to merge templates'
-                        })
+                        try:
+                            from db import db_cursor
+                            with db_cursor(commit=True) as (conn, cur):
+                                cur.execute("UPDATE tblenrollment_tasks SET status='error' WHERE id=%s", (enroll_task['id'],))
+                        except Exception: pass
                     else:
                         template_bytes = bytes(merged_template)
                         if 0 < merged_len < len(template_bytes):
@@ -141,23 +144,32 @@ def _scanner_loop():
                         template_b64 = base64.b64encode(template_bytes).decode('utf-8')
                         
                         try:
-                            # Send to Cloud
-                            req_data = {
-                                'task_id': enroll_task['id'],
-                                'employee_id': enroll_task['employee_id'],
-                                'finger_index': enroll_task['finger_index'],
-                                'template': template_b64
-                            }
-                            resp = requests.post(f"{CLOUD_API_URL}/api/fingerprint/enroll_complete", json=req_data, timeout=5)
-                            print("Successfully uploaded enrollment to Cloud.")
+                            # Send to Database directly
+                            from db import db_cursor
+                            with db_cursor(commit=True) as (conn, cur):
+                                cur.execute("SELECT first_name, last_name FROM tblemployee WHERE employee_id=%s", (enroll_task['employee_id'],))
+                                emp = cur.fetchone()
+                                user_name = f"{emp['first_name']} {emp['last_name']}" if emp else str(enroll_task['employee_id'])
+
+                                cur.execute("""
+                                    INSERT INTO fingerprints (employee_id, user_name, fingerprint_template, finger_index)
+                                    VALUES (%s, %s, %s, %s)
+                                    ON DUPLICATE KEY UPDATE 
+                                        fingerprint_template = VALUES(fingerprint_template),
+                                        user_name = VALUES(user_name)
+                                """, (enroll_task['employee_id'], user_name, template_b64, enroll_task['finger_index']))
+
+                                # Mark task success
+                                cur.execute("UPDATE tblenrollment_tasks SET status='success' WHERE id=%s", (enroll_task['id'],))
+                            
+                            print("Successfully stored enrollment to Database.")
                             
                             # Add to active array to avoid needing a reboot
-                            # Using dummy ID for live usage until reboot for new template
                             new_local_id = max(list(id_map.keys()) + [0]) + 1
                             zkfp.DBAdd(new_local_id, template_bytes)
                             id_map[new_local_id] = {
                                 'employee_id': enroll_task['employee_id'],
-                                'name': f"Employee {enroll_task['employee_id']}"
+                                'name': user_name
                             }
                         except Exception as e:
                             print(f"Error completing enrollment: {e}")

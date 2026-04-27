@@ -1,0 +1,682 @@
+<style>
+  /* ── DTR Content styles (scoped) ── */
+  .dtr-report-wrap {
+    padding: 20px 24px 32px;
+    min-height: 100%;
+  }
+
+  /* Report header */
+  .dtr-report-header {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .dtr-rh-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .dtr-rh-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 13px;
+    background: var(--navy);
+    border: 2px solid #3a6fad;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .dtr-rh-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    color: var(--navy);
+  }
+
+  .dtr-rh-sub {
+    font-size: 11.5px;
+    color: var(--muted2);
+    margin-top: 3px;
+  }
+
+  .dtr-rh-period {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--navy-mid);
+    background: var(--navy-light);
+    border: 1px solid #c5d8f5;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  /* Summary breakdown table */
+  .dtr-summary-table {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .dtr-sum-head {
+    display: grid;
+    grid-template-columns: 180px 1fr 1fr 1fr;
+    background: var(--navy);
+    padding: 10px 20px;
+    border-radius: 14px 14px 0 0;
+  }
+
+  .dtr-sum-head span {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: rgba(255, 255, 255, 0.65);
+  }
+
+  .dtr-sum-head span:not(:first-child) {
+    text-align: center;
+  }
+
+  .dtr-sum-row {
+    display: grid;
+    grid-template-columns: 180px 1fr 1fr 1fr;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+
+  .dtr-sum-row:last-child {
+    border-bottom: none;
+  }
+
+  .dtr-sum-row:nth-child(even) {
+    background: var(--surface2);
+  }
+
+  .dtr-sum-row.total-row {
+    background: var(--navy-light);
+    border-top: 2px solid #c5d8f5;
+  }
+
+  .dtr-sum-row-lbl {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+
+  .dtr-sum-cell {
+    text-align: center;
+  }
+
+  .dtr-sum-big {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    color: var(--navy);
+    display: block;
+  }
+
+  .dtr-sum-small {
+    font-size: 10px;
+    color: var(--muted2);
+    margin-top: 2px;
+    display: block;
+  }
+
+  .dtr-sum-late {
+    color: var(--red) !important;
+  }
+
+  .dtr-sum-hours {
+    color: var(--green) !important;
+  }
+
+  /* Table card */
+  .dtr-table-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .dtr-table-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 18px;
+    border-bottom: 1.5px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .dtr-table-card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: .95rem;
+    color: var(--navy);
+  }
+
+  .dtr-table-card-sub {
+    font-size: 11px;
+    color: var(--muted2);
+    margin-top: 1px;
+  }
+
+  /* Legend */
+  .dtr-legend {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .dtr-leg-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10.5px;
+    color: var(--muted);
+  }
+
+  .dtr-leg-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+  }
+
+  /* The main DTR table */
+  .dtr-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12.5px;
+  }
+
+  .dtr-table thead th {
+    padding: 9px 14px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--muted2);
+    border-bottom: 1.5px solid var(--border);
+    white-space: nowrap;
+    background: var(--surface);
+  }
+
+  .dtr-table thead th.center {
+    text-align: center;
+  }
+
+  .dtr-table tbody td {
+    padding: 8px 14px;
+    border-bottom: 1px solid rgba(226, 221, 214, 0.45);
+    vertical-align: middle;
+  }
+
+  .dtr-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Row types */
+  .dtr-table tbody tr.row-weekend td {
+    background: var(--surface2);
+    color: var(--muted2);
+  }
+
+  .dtr-table tbody tr.row-absent:not(.row-weekend) td {
+    background: rgba(192, 57, 43, 0.03);
+  }
+
+  .dtr-table tbody tr.row-halfday td {
+    background: rgba(146, 100, 10, 0.03);
+  }
+
+  .dtr-table tbody tr.row-present:hover td {
+    background: var(--navy-hover);
+  }
+
+  /* Day number cell */
+  .day-num-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .day-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .day-num.weekend {
+    background: var(--surface2);
+    color: var(--muted2);
+  }
+
+  .day-num.present {
+    background: var(--green-dim);
+    color: var(--green);
+  }
+
+  .day-num.half-day {
+    background: rgba(146, 100, 10, 0.1);
+    color: var(--accent);
+  }
+
+  .day-num.absent {
+    background: var(--red-dim);
+    color: var(--red);
+  }
+
+  .day-label {
+    font-size: 11px;
+    color: var(--muted2);
+  }
+
+  /* Time cells */
+  .time-cell {
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .time-cell.empty {
+    color: var(--muted2);
+    font-style: italic;
+    font-size: 11px;
+  }
+
+  .time-pair {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    align-items: center;
+  }
+
+  .time-pair .t-in {
+    font-size: 12px;
+    color: var(--navy);
+    font-weight: 500;
+  }
+
+  .time-pair .t-out {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  .status-badge.present {
+    background: var(--green-dim);
+    color: var(--green);
+    border: 1px solid var(--green-brd);
+  }
+
+  .status-badge.half-day {
+    background: rgba(146, 100, 10, 0.08);
+    color: var(--accent);
+    border: 1px solid rgba(146, 100, 10, 0.2);
+  }
+
+  .status-badge.absent {
+    background: var(--red-dim);
+    color: var(--red);
+    border: 1px solid var(--red-brd);
+  }
+
+  .status-badge.weekend {
+    background: var(--surface2);
+    color: var(--muted2);
+    border: 1px solid var(--border);
+  }
+
+  /* Late badge */
+  .late-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 20px;
+    background: rgba(146, 100, 10, 0.08);
+    color: var(--accent);
+    border: 1px solid rgba(146, 100, 10, 0.2);
+    white-space: nowrap;
+  }
+
+  /* No log notice */
+  .no-log-text {
+    font-size: 11px;
+    color: var(--muted2);
+    font-style: italic;
+  }
+
+  /* ── Print styles ── */
+  @media print {
+    .dtr-report-wrap {
+      padding: 0;
+    }
+
+    .dtr-report-header,
+    .dtr-table-card {
+      border: 1px solid #ccc;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .dtr-summary-row {
+      break-inside: avoid;
+    }
+
+    .dtr-table-card {
+      break-inside: auto;
+    }
+
+    .dtr-table thead {
+      display: table-header-group;
+    }
+
+    .dtr-table tbody tr {
+      break-inside: avoid;
+    }
+
+    .dtr-table-card-header {
+      background: #f5f5f5;
+    }
+  }
+</style>
+
+
+<div class="dtr-report-wrap" id="dtrReportWrap">
+  <!-- Filled by initDtrContent() -->
+</div>
+
+
+<script>
+
+  function to12Hour(time24) {
+    const [hour, minute] = time24.split(":");
+    let h = parseInt(hour);
+    const ampm = h >= 12 ? "PM" : "AM";
+
+    h = h % 12;
+    h = h ? h : 12; // 0 becomes 12
+
+    return `${h}:${minute} ${ampm}`;
+  }
+
+
+  window.initDtrContent = function (data) {
+
+    const emp = data.employee;
+    const period = data.period;
+    const summary = data.summary;
+    const days = data.days;
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function initials(name) {
+      return name.split(' ').map(w => w[0] || '').slice(0, 2).join('').toUpperCase();
+    }
+
+    function fmtLate(min) {
+      if (!min) return '';
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      return h ? `${h}h ${m}m late` : `${m}m late`;
+    }
+
+    function timeCell(t) {
+      if (!t) return '<span class="time-cell empty">—</span>';
+      return `<span class="time-cell">${t}</span>`;
+    }
+
+    function statusBadge(status) {
+      const labels = {
+        'present': '● Present',
+        'half-day': '◑ Half-Day',
+        'absent': '○ Absent',
+        'weekend': '— Weekend',
+      };
+      return `<span class="status-badge ${status}">${labels[status] || status}</span>`;
+    }
+
+    // ── Build report header ───────────────────────────────────────────────────
+    const headerHtml = `
+    <div class="dtr-report-header">
+      <div class="dtr-rh-left">
+        <div class="dtr-rh-avatar">${initials(emp.full_name)}</div>
+        <div>
+          <div class="dtr-rh-name">${emp.full_name}</div>
+          <div class="dtr-rh-sub">${emp.id} · ${emp.designation}</div>
+          <div class="dtr-rh-sub" style="font-size:10.5px;color:var(--navy-mid);margin-top:3px;">
+            <span style="background:var(--navy-light);border:1px solid #c5d8f5;border-radius:20px;padding:2px 8px;">
+              📅 ${emp.schedule || 'Schedule based on designation'}
+            </span>
+          </div>
+          <div class="dtr-rh-period">
+            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            ${period.label}
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted2);text-align:right;">
+        Generated: ${new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}<br>
+        <span style="font-size:10px;">Daily Time Record Report</span>
+      </div>
+    </div>`;
+
+    // ── Build summary breakdown table (1st Half / 2nd Half / Overall) ──────────
+    function fmtLateMin(min) {
+      if (!min) return '0m';
+      const h = Math.floor(min / 60), m = min % 60;
+      return h ? h + 'h ' + m + 'm' : m + 'm';
+    }
+
+    const h1s = data.summary_h1;
+    const h2s = data.summary_h2;
+    const ovs = data.summary;
+
+    function sumCell(big, bigCls, small) {
+      return '<div class="dtr-sum-cell"><span class="dtr-sum-big ' + bigCls + '">' + big + '</span><span class="dtr-sum-small">' + small + '</span></div>';
+    }
+
+    const summaryHtml = `
+    <div class="dtr-summary-table">
+      <div class="dtr-sum-head">
+        <span>Metric</span>
+        <span>1st Half (Days 1-15)</span>
+        <span>2nd Half (Days 16-End)</span>
+        <span>Overall Total</span>
+      </div>
+      <div class="dtr-sum-row">
+        <div class="dtr-sum-row-lbl">Days Present</div>
+        ${sumCell(h1s.present, '', h1s.halfday + ' half-day(s)')}
+        ${sumCell(h2s.present, '', h2s.halfday + ' half-day(s)')}
+        ${sumCell(ovs.total_present, '', ovs.total_halfday + ' half-day(s)')}
+      </div>
+      <div class="dtr-sum-row">
+        <div class="dtr-sum-row-lbl">Absences</div>
+        ${sumCell(h1s.absent, h1s.absent > 0 ? 'dtr-sum-late' : '', 'days missed')}
+        ${sumCell(h2s.absent, h2s.absent > 0 ? 'dtr-sum-late' : '', 'days missed')}
+        ${sumCell(ovs.total_absent, ovs.total_absent > 0 ? 'dtr-sum-late' : '', 'days missed')}
+      </div>
+      <div class="dtr-sum-row">
+        <div class="dtr-sum-row-lbl">Total Late</div>
+        ${sumCell(fmtLateMin(h1s.late_min), h1s.late_min > 0 ? 'dtr-sum-late' : '', h1s.late_min + ' minutes')}
+        ${sumCell(fmtLateMin(h2s.late_min), h2s.late_min > 0 ? 'dtr-sum-late' : '', h2s.late_min + ' minutes')}
+        ${sumCell(fmtLateMin(ovs.total_late_min), ovs.total_late_min > 0 ? 'dtr-sum-late' : '', ovs.total_late_min + ' minutes')}
+      </div>
+      <div class="dtr-sum-row">
+        <div class="dtr-sum-row-lbl">Undertime</div>
+        ${sumCell(fmtLateMin(h1s.undertime_min || 0), (h1s.undertime_min || 0) > 0 ? 'dtr-sum-late' : '', (h1s.undertime_min || 0) + ' minutes')}
+        ${sumCell(fmtLateMin(h2s.undertime_min || 0), (h2s.undertime_min || 0) > 0 ? 'dtr-sum-late' : '', (h2s.undertime_min || 0) + ' minutes')}
+        ${sumCell(fmtLateMin(ovs.total_undertime_min || 0), (ovs.total_undertime_min || 0) > 0 ? 'dtr-sum-late' : '', (ovs.total_undertime_min || 0) + ' minutes')}
+      </div>
+      <div class="dtr-sum-row total-row">
+        <div class="dtr-sum-row-lbl">Hours Dutied</div>
+        ${sumCell(h1s.hours_dutied + 'h', 'dtr-sum-hours', 'estimated')}
+        ${sumCell(h2s.hours_dutied + 'h', 'dtr-sum-hours', 'estimated')}
+        ${sumCell(ovs.total_hours_dutied + 'h', 'dtr-sum-hours', 'total month')}
+      </div>
+    </div>`;
+
+    // ── Build table rows ──────────────────────────────────────────────────────
+    const rowsHtml = days.map(d => {
+      const rowClass = d.is_weekend ? 'row-weekend'
+        : d.status === 'present' ? 'row-present'
+          : d.status === 'half-day' ? 'row-halfday'
+            : 'row-absent';
+
+      const dayClass = d.is_weekend ? 'weekend' : d.status;
+
+      const lateStr = fmtLate(d.late_min);
+
+      // Time cells — group AM and PM
+      let amHtml, pmHtml;
+      if (d.is_weekend || !d.has_log) {
+        amHtml = '<span class="no-log-text">—</span>';
+        pmHtml = '<span class="no-log-text">—</span>';
+      } else {
+        amHtml = `
+        <div class="time-pair">
+          <span class="t-in">${to12Hour(d.am_in) || '—'}</span>
+          <span class="t-out">${to12Hour(d.am_out) || '—'}</span>
+        </div>`;
+        pmHtml = `
+        <div class="time-pair">
+          <span class="t-in">${to12Hour(d.pm_in) || '—'}</span>
+          <span class="t-out">${to12Hour(d.pm_out) || '—'}</span>
+        </div>`;
+      }
+
+      const hoursCell = d.is_weekend || !d.has_log
+        ? '<span class="no-log-text">—</span>'
+        : '<span style="font-size:12px;color:var(--navy);font-weight:500;">' + (d.hours || 0) + 'h</span>';
+
+      return `
+      <tr class="${rowClass}">
+        <td>
+          <div class="day-num-cell">
+            <div class="day-num ${dayClass}">${d.day}</div>
+            <div class="day-label">${d.weekday}</div>
+          </div>
+        </td>
+        <td style="font-size:11.5px;color:var(--muted);">${d.date_str}</td>
+        <td class="center">${amHtml}</td>
+        <td class="center">${pmHtml}</td>
+        <td class="center">${d.is_weekend ? '<span class="no-log-text">—</span>' : statusBadge(d.status)}</td>
+        <td class="center">${lateStr ? '<span class="late-badge">\u23f1 ' + lateStr + '</span>' : (d.is_weekend || !d.has_log ? '<span class="no-log-text">—</span>' : '<span style="color:var(--green);font-size:11px;">On time</span>')}
+          ${d.undertime_min > 0 ? '<br><span class="late-badge" style="background:rgba(192,57,43,0.08);color:#c0392b;border-color:rgba(192,57,43,0.2);">\u23f0 ' + fmtLate(d.undertime_min).replace('late', 'early') + '</span>' : ''}
+        </td>
+        <td class="center">${hoursCell}</td>
+      </tr>`;
+    }).join('');
+
+    // ── Assemble full table ───────────────────────────────────────────────────
+    const tableHtml = `
+    <div class="dtr-table-card">
+      <div class="dtr-table-card-header">
+        <div>
+          <div class="dtr-table-card-title">Attendance Log — ${period.label}</div>
+          <div class="dtr-table-card-sub">${days.length} days · ${summary.working_days} working days</div>
+        </div>
+        <div class="dtr-legend">
+          <div class="dtr-leg-item"><div class="dtr-leg-dot" style="background:var(--green);"></div> Present</div>
+          <div class="dtr-leg-item"><div class="dtr-leg-dot" style="background:var(--accent);"></div> Half-Day</div>
+          <div class="dtr-leg-item"><div class="dtr-leg-dot" style="background:var(--red);"></div> Absent</div>
+          <div class="dtr-leg-item"><div class="dtr-leg-dot" style="background:var(--border2);"></div> Weekend</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="dtr-table">
+          <thead>
+            <tr>
+              <th style="width:70px;">Day</th>
+              <th>Date</th>
+              <th class="center" style="width:130px;">AM (In / Out)</th>
+              <th class="center" style="width:130px;">PM (In / Out)</th>
+              <th class="center" style="width:110px;">Status</th>
+              <th class="center" style="width:100px;">Late</th>
+              <th class="center" style="width:80px;">Hours</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+    </div>`;
+
+    // ── Inject everything ─────────────────────────────────────────────────────
+    $('#dtrReportWrap').html(headerHtml + summaryHtml + tableHtml);
+
+  };
+
+
+  // ── Print handler ─────────────────────────────────────────────────────────────
+  window.printDtr = function () {
+    const content = document.getElementById('dtrReportWrap').innerHTML;
+    const win = window.open('', '_blank', 'width=900,height=700');
+    win.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>DTR Report</title>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+      <style>
+        :root {
+          --navy:#1e3a5f; --navy-mid:#2a4f80; --navy-light:#e8f0fb;
+          --accent:#c8973a; --bg:#fff; --surface:#fff; --surface2:#fafaf8;
+          --border:#e2ddd6; --border2:#cdc8c0; --text:#1a1a2e;
+          --muted:#5a6272; --muted2:#9fa5b4;
+          --red:#c0392b; --red-dim:rgba(192,57,43,0.07); --red-brd:rgba(192,57,43,0.18);
+          --green:#1a7f4b; --green-dim:rgba(26,127,75,0.08); --green-brd:rgba(26,127,75,0.2);
+        }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:'Plus Jakarta Sans',sans-serif; padding:20px; color:var(--text); font-size:12px; }
+        ${$('style').map(function () { return $(this).text(); }).get().join('\n')}
+      </style>
+    </head>
+    <body>${content}</body>
+    </html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 600);
+  };
+</script>

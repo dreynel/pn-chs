@@ -98,6 +98,8 @@ def pages(filename):
 @app.route('/employees')
 @login_required
 def employees():
+    if session['user'].get('role') not in ['Finance', 'HR']:
+        return redirect(url_for('dashboard'))
     return render_template('index.html', user=session['user'], initial_page='/pages/employee.html', title='Employees')
 
 

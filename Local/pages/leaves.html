@@ -1,0 +1,263 @@
+<style>
+  .lv-page { height:100%; display:flex; flex-direction:column; overflow:hidden; }
+  .lv-toolbar { display:flex; align-items:center; gap:10px; padding:12px 18px;
+    background:var(--surface); border-bottom:1.5px solid var(--border); flex-shrink:0; flex-wrap:wrap; }
+  .lv-title { font-family:'Playfair Display',serif; font-size:1.05rem; color:var(--navy); }
+  .lv-sub   { font-size:10.5px; color:var(--muted2); margin-top:1px; }
+
+  .btn { display:inline-flex; align-items:center; gap:5px; padding:7px 13px; border-radius:8px;
+    font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid transparent; transition:all .15s; }
+  .btn-primary { background:var(--navy); color:#fff; }
+  .btn-outline { background:var(--surface2); border-color:var(--border); color:var(--muted); }
+  .btn-outline:hover { background:var(--navy-light); color:var(--navy-mid); }
+  .btn-success { background:rgba(22,163,74,.1); border-color:rgba(22,163,74,.3); color:#16a34a; }
+  .btn-danger  { background:var(--red-dim); border-color:rgba(220,38,38,.3); color:var(--red); }
+
+  .lv-body { flex:1; overflow-y:auto; padding:20px 24px; }
+
+  /* Summary cards */
+  .lv-cards { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+  .lv-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 16px; }
+  .lv-card-lbl { font-size:10px; color:var(--muted2); text-transform:uppercase; margin-bottom:4px; }
+  .lv-card-val { font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--navy); }
+
+  /* Filter tabs */
+  .filter-tabs { display:flex; gap:4px; margin-bottom:16px; }
+  .ftab { padding:5px 12px; border-radius:6px; font-size:11.5px; font-weight:600; cursor:pointer;
+    background:var(--surface2); color:var(--muted); border:1px solid var(--border); transition:all .15s; }
+  .ftab.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+
+  table { width:100%; border-collapse:separate; border-spacing:0; }
+  th { position:sticky; top:0; background:var(--bg); z-index:5; text-align:left;
+    padding:10px 14px; font-size:10.5px; text-transform:uppercase; color:var(--muted2);
+    border-bottom:1.5px solid var(--border); }
+  td { padding:11px 14px; background:var(--surface); border-bottom:1px solid rgba(226,221,214,.4); font-size:12.5px; }
+
+  .status-pill { font-size:9px; font-weight:700; padding:2px 8px; border-radius:4px; }
+  .pill-pending  { background:#fef3c7; color:#92400e; }
+  .pill-approved { background:var(--green-dim); color:var(--green); }
+  .pill-rejected { background:var(--red-dim); color:var(--red); }
+
+  .type-sl { background:#ede9fe; color:#6d28d9; font-size:9px; font-weight:700; padding:2px 7px; border-radius:4px; }
+  .type-vl { background:#ecfdf5; color:#059669; font-size:9px; font-weight:700; padding:2px 7px; border-radius:4px; }
+
+  /* Modal */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); backdrop-filter:blur(2px);
+    z-index:2000; display:none; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal-box { background:#fff; width:440px; border-radius:14px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,.2); }
+  .modal-hdr { padding:18px 22px; border-bottom:1.5px solid var(--border);
+    font-family:'Playfair Display',serif; font-size:1rem; color:var(--navy); }
+  .modal-body { padding:20px 22px; display:flex; flex-direction:column; gap:12px; }
+  .form-lbl { font-size:11px; color:var(--muted); margin-bottom:4px; display:block; }
+  .form-inp { width:100%; padding:8px 10px; border:1.5px solid var(--border); border-radius:8px;
+    font-size:12.5px; outline:none; background:var(--surface2); font-family:inherit; box-sizing:border-box; }
+  .form-inp:focus { border-color:var(--navy-mid); }
+  .modal-ftr { padding:12px 22px; border-top:1.5px solid var(--border); display:flex; justify-content:flex-end;
+    gap:8px; background:var(--surface2); }
+  .err-msg { font-size:11.5px; color:var(--red); background:var(--red-dim); padding:8px 12px;
+    border-radius:7px; display:none; }
+</style>
+
+<div class="lv-page">
+  <div class="lv-toolbar">
+    <div>
+      <div class="lv-title">Leave Management</div>
+      <div class="lv-sub">File and manage employee sick leave (SL) and vacation leave (VL)</div>
+    </div>
+    <div style="flex:1;"></div>
+    <button class="btn btn-primary" id="btnFileLeave">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      File Leave
+    </button>
+  </div>
+
+  <div class="lv-body">
+    <div class="lv-cards">
+      <div class="lv-card"><div class="lv-card-lbl">Total Filed</div><div class="lv-card-val" id="cTotal">—</div></div>
+      <div class="lv-card"><div class="lv-card-lbl">Pending</div><div class="lv-card-val" id="cPending" style="color:#92400e;">—</div></div>
+      <div class="lv-card"><div class="lv-card-lbl">Approved</div><div class="lv-card-val" id="cApproved" style="color:var(--green);">—</div></div>
+      <div class="lv-card"><div class="lv-card-lbl">Rejected</div><div class="lv-card-val" id="cRejected" style="color:var(--red);">—</div></div>
+    </div>
+
+    <div class="filter-tabs">
+      <div class="ftab active" data-status="all">All</div>
+      <div class="ftab" data-status="Pending">Pending</div>
+      <div class="ftab" data-status="Approved">Approved</div>
+      <div class="ftab" data-status="Rejected">Rejected</div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th id="empColHdr">Employee</th>
+          <th>Leave Date</th>
+          <th>Type</th>
+          <th>Reason</th>
+          <th>Filed</th>
+          <th>Status</th>
+          <th style="width:120px;"></th>
+        </tr>
+      </thead>
+      <tbody id="lvBody">
+        <tr><td colspan="7" style="text-align:center;color:var(--muted2);padding:24px;">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- File Leave Modal -->
+<div class="modal-overlay" id="fileModal">
+  <div class="modal-box">
+    <div class="modal-hdr">File a Leave Request</div>
+    <div class="modal-body">
+      <div id="hrEmpRow" style="display:none;">
+        <label class="form-lbl">Employee *</label>
+        <select class="form-inp" id="mEmpSelect"><option value="">— Select Employee —</option></select>
+      </div>
+      <div>
+        <label class="form-lbl">Leave Date *</label>
+        <input type="date" class="form-inp" id="mLeaveDate">
+      </div>
+      <div>
+        <label class="form-lbl">Leave Type *</label>
+        <select class="form-inp" id="mLeaveType">
+          <option value="VL">Vacation Leave (VL)</option>
+          <option value="SL">Sick Leave (SL)</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-lbl">Reason</label>
+        <input type="text" class="form-inp" id="mReason" placeholder="Optional reason">
+      </div>
+      <div class="err-msg" id="mErr"></div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-outline" id="btnCancelFile">Cancel</button>
+      <button class="btn btn-primary" id="btnSaveLeave">Submit Request</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const API_LEAVES = '/api/payroll/leaves';
+  const API_ME     = '/api/auth/me';
+  const API_EMPS   = '/api/employees/list';
+
+  let leaves=[], activeStatus='all', userRole='', userEmpId='';
+
+  async function init() {
+    const me = await $.get(API_ME);
+    userRole  = me.role;
+    userEmpId = me.employee_id;
+
+    if (userRole !== 'Employee') {
+      $('#empColHdr').show();
+      // HR/Admin: load employees for file modal
+      try {
+        const emps = await $.get('/api/employees/list');
+        emps.forEach(e => $('#mEmpSelect').append(`<option value="${e.employee_id}">${e.first_name} ${e.last_name}</option>`));
+        $('#hrEmpRow').show();
+      } catch(e) {}
+    } else {
+      $('#empColHdr').hide();
+    }
+    loadLeaves();
+  }
+
+  async function loadLeaves() {
+    try {
+      leaves = await $.get(API_LEAVES);
+      renderCards();
+      renderTable();
+    } catch(e) { console.error(e); }
+  }
+
+  function renderCards() {
+    $('#cTotal').text(leaves.length);
+    $('#cPending').text(leaves.filter(l=>l.status==='Pending').length);
+    $('#cApproved').text(leaves.filter(l=>l.status==='Approved').length);
+    $('#cRejected').text(leaves.filter(l=>l.status==='Rejected').length);
+  }
+
+  function renderTable() {
+    const filtered = activeStatus==='all' ? leaves : leaves.filter(l=>l.status===activeStatus);
+    if (!filtered.length) {
+      $('#lvBody').html(`<tr><td colspan="7" style="text-align:center;color:var(--muted2);padding:24px;">No leave records found.</td></tr>`);
+      return;
+    }
+    $('#lvBody').html(filtered.map(l => {
+      const sPill = l.status==='Pending' ? 'pill-pending' : l.status==='Approved' ? 'pill-approved' : 'pill-rejected';
+      const tPill = l.leave_type==='SL' ? 'type-sl' : 'type-vl';
+      const empCol = userRole !== 'Employee' ? `<td><strong>${l.emp_name}</strong><br><small style="color:var(--muted2)">${l.employee_id}</small></td>` : '';
+      const actionBtns = (l.status==='Pending' && userRole !== 'Employee') ?
+        `<button class="btn btn-success" style="padding:4px 9px;font-size:10.5px;margin-right:4px;" onclick="reviewLeave(${l.id},'Approved')">Approve</button>
+         <button class="btn btn-danger"  style="padding:4px 9px;font-size:10.5px;" onclick="reviewLeave(${l.id},'Rejected')">Reject</button>` :
+        (l.reviewed_by ? `<small style="color:var(--muted2)">By: ${l.reviewed_by}</small>` : '');
+      return `<tr>
+        ${empCol}
+        <td>${l.leave_date}</td>
+        <td><span class="${tPill}">${l.leave_type}</span></td>
+        <td>${l.reason || '<span style="color:var(--muted2)">—</span>'}</td>
+        <td><small>${l.filed_at||'—'}</small></td>
+        <td><span class="status-pill ${sPill}">${l.status}</span></td>
+        <td>${actionBtns}</td>
+      </tr>`;
+    }).join(''));
+  }
+
+  window.reviewLeave = async function(id, status) {
+    const action = status === 'Approved' ? 'approve' : 'reject';
+    if (!confirm(`Are you sure you want to ${action} this leave request?`)) return;
+    try {
+      await fetch(API_LEAVES + '/' + id + '/status', {
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({status})
+      });
+      loadLeaves();
+    } catch(e) { alert('Error updating leave.'); }
+  };
+
+  // Filter tabs
+  $('.ftab').on('click', function() {
+    $('.ftab').removeClass('active'); $(this).addClass('active');
+    activeStatus = $(this).data('status');
+    renderTable();
+  });
+
+  // File leave modal
+  $('#btnFileLeave').on('click', function() {
+    $('#mLeaveDate').val(''); $('#mReason').val(''); $('#mErr').hide();
+    $('#fileModal').addClass('open');
+  });
+  $('#btnCancelFile').on('click', () => $('#fileModal').removeClass('open'));
+  $('#fileModal').on('click', function(e) { if(e.target===this) $(this).removeClass('open'); });
+
+  $('#btnSaveLeave').on('click', async function() {
+    const leave_date = $('#mLeaveDate').val();
+    const leave_type = $('#mLeaveType').val();
+    const reason     = $('#mReason').val().trim();
+    const employee_id = userRole === 'Employee' ? userEmpId : $('#mEmpSelect').val();
+
+    if (!leave_date) { $('#mErr').text('Leave date is required.').show(); return; }
+    if (userRole !== 'Employee' && !employee_id) { $('#mErr').text('Please select an employee.').show(); return; }
+    $('#mErr').hide();
+    $(this).prop('disabled',true).text('Submitting…');
+    try {
+      const res = await fetch(API_LEAVES, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({employee_id, leave_date, leave_type, reason})
+      });
+      const d = await res.json();
+      if (d.error) { $('#mErr').text(d.error).show(); }
+      else { $('#fileModal').removeClass('open'); loadLeaves(); }
+    } catch(e) { $('#mErr').text('Failed to submit.').show(); }
+    $(this).prop('disabled',false).text('Submit Request');
+  });
+
+  init();
+})();
+</script>

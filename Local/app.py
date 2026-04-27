@@ -1,55 +1,208 @@
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory
+from routes import employee_bp, dtr_bp, payroll_bp, fingerprint_bp, attendance_bp, registry_bp, dashboard_bp
 import os
-import requests
-from flask import Flask, render_template, jsonify, request
-from scanner_manager import KIOSK_STATE, start_device_thread
 
 app = Flask(__name__)
+app.secret_key = 'paycore-secret-2026'
 
-CLOUD_API_URL = os.environ.get('CLOUD_API_URL', 'http://127.0.0.1:5000')
+# Register blueprints
+app.register_blueprint(employee_bp)
+app.register_blueprint(dtr_bp)
+app.register_blueprint(payroll_bp)
+app.register_blueprint(fingerprint_bp)
+app.register_blueprint(attendance_bp)
+app.register_blueprint(registry_bp)
+app.register_blueprint(dashboard_bp)
+
+# Auto-create DB tables on startup
+with app.app_context():
+    try:
+        from init_db import init
+        init()
+    except Exception as e:
+        print(f"⚠️  DB init warning: {e}")
+
+# DB Users are stored in tblusers.
+
+
+import threading
+import requests
+import time
+
+cloud_reachable = True
+# Only verify via live cloud URL, not localhost
+CLOUD_API_URL = os.environ.get('CLOUD_API_URL', 'https://pn-chs.onrender.com')
+
+def check_cloud_status():
+    global cloud_reachable
+    while True:
+        try:
+            requests.get(CLOUD_API_URL, timeout=5)
+            cloud_reachable = True
+        except Exception:
+            cloud_reachable = False
+        time.sleep(10)
+
+threading.Thread(target=check_cloud_status, daemon=True).start()
+
+def login_required(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated
+
+@app.before_request
+def restrict_offline():
+    if not cloud_reachable:
+        if request.endpoint and ('static' in request.endpoint or request.endpoint == 'offline'):
+            return
+        if request.path.startswith('/api/'):
+            from flask import jsonify
+            return jsonify({'error': 'Cloud is currently unreachable.'}), 503
+        return render_template('offline.html')
+
+# ── Routes ───────────────────────────────────────────────────────────────────
 
 @app.route('/')
-def redirect_to_kiosk():
-    return render_template('kiosk.html')
+def index():
+    # Redirect to proper page if logged in, otherwise login
+    if 'user' in session:
+        if session['user'].get('role') == 'Employee':
+            return redirect(url_for('dtr'))
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('login'))
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if 'user' in session:
+        if session['user'].get('role') == 'Employee':
+            return redirect(url_for('dtr'))
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        email    = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
+        
+        # Check against tblusers
+        from db import db_cursor
+        with db_cursor() as (conn, cur):
+            cur.execute("SELECT employee_id, username, name, role FROM tblusers WHERE username=%s AND password=%s", (email, password))
+            emp = cur.fetchone()
+            if emp:
+                session['user'] = {
+                    'email': emp['username'],
+                    'name': emp['name'],
+                    'role': emp['role'],
+                    'employee_id': emp['employee_id']
+                }
+                if emp['role'] == 'Employee':
+                    return redirect(url_for('dtr'))
+                return redirect(url_for('dashboard'))
+                
+        flash('Invalid username or password.', 'error')
+
+    return render_template('login.html')
+
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    # index.html is the shell (sidebar + topbar + content div)
+    # Pass the session user so Jinja can render the name/initials
+    return render_template('index.html', user=session['user'])
+
+
+# Serve page fragments loaded dynamically via jQuery $.load()
+@app.route('/pages/<path:filename>')
+@login_required
+def pages(filename):
+    pages_dir = os.path.join(app.root_path, 'pages')
+    return send_from_directory(pages_dir, filename)
+
+
+@app.route('/employees')
+@login_required
+def employees():
+    if session['user'].get('role') not in ['Finance', 'HR']:
+        return redirect(url_for('dashboard'))
+    return render_template('index.html', user=session['user'], initial_page='/pages/employee.html', title='Employees')
+
+
+@app.route('/payroll')
+@login_required
+def payroll():
+    if session['user'].get('role') not in ['Admin', 'Finance']:
+        return redirect(url_for('dashboard'))
+    return render_template('index.html', user=session['user'], initial_page='/pages/payroll.html', title='Payroll Processing')
+
+@app.route('/payroll_approvals')
+@login_required
+def payroll_approvals():
+    if session['user'].get('role') != 'Admin':
+        return redirect(url_for('dashboard'))
+    return render_template('index.html', user=session['user'], initial_page='/pages/payroll_approval.html', title='Payroll Approvals')
+
+
+@app.route('/holidays')
+@login_required
+def holidays():
+    if session['user'].get('role') not in ['Admin', 'Finance', 'HR']:
+        return redirect(url_for('dashboard'))
+    return render_template('index.html', user=session['user'], initial_page='/pages/holidays.html', title='Holiday Calendar')
+
+
+@app.route('/leaves')
+@login_required
+def leaves():
+    return render_template('index.html', user=session['user'], initial_page='/pages/leaves.html', title='Leave Management')
+
+
+@app.route('/dtr')
+@login_required
+def dtr():
+    return render_template('index.html', user=session['user'], initial_page='/pages/dtr.html', title='DTR')
+
+
+@app.route('/mypayslip')
+@login_required
+def mypayslip():
+    return render_template('index.html', user=session['user'], initial_page='/pages/mypayslip.html', title='My Payslip')
+
+
+@app.route('/payroll_report')
+@login_required
+def payroll_report():
+    return render_template('index.html', user=session['user'], initial_page='/pages/payroll_report.html', title='Payroll Report')
+
+
+@app.route('/registry')
+@login_required
+def registry():
+    if session['user'].get('role') not in ['Admin', 'Finance']:
+        return redirect(url_for('dashboard'))
+    return render_template('index.html', user=session['user'], initial_page='/pages/registry.html', title='Global Registry')
+
+
+@app.route('/api/auth/me')
+@login_required
+def auth_me():
+    from flask import jsonify
+    return jsonify(session.get('user', {}))
 
 @app.route('/kiosk')
 def kiosk():
     return render_template('kiosk.html')
 
-@app.route('/api/attendance/start', methods=['POST'])
-def start_kiosk():
-    KIOSK_STATE['last_scan'] = None
-    KIOSK_STATE['last_error'] = None
-    start_device_thread()
-    return jsonify({'message': 'Scanner started'})
-
-@app.route('/api/attendance/stop', methods=['POST'])
-def stop_kiosk():
-    # Keep it running usually, but satisfy the Kiosk JS if it calls it
-    return jsonify({'message': 'Stopping...'})
-
-@app.route('/api/attendance/poll', methods=['GET'])
-def poll_kiosk():
-    import time
-    return jsonify({
-        'status': KIOSK_STATE['status'],
-        'last_scan': KIOSK_STATE['last_scan'],
-        'last_error': KIOSK_STATE['last_error'],
-        'server_time': time.time()
-    })
-
-@app.route('/api/attendance/log', methods=['POST'])
-def log_attendance():
-    # Forward the log to the Cloud API
-    data = request.json
-    try:
-        resp = requests.post(f"{CLOUD_API_URL}/api/attendance/log", json=data)
-        if resp.ok:
-            return jsonify({'message': 'Forwarded successfully'}), 200
-        else:
-            return jsonify(resp.json()), resp.status_code
-    except Exception as e:
-        return jsonify({'error': f"Failed to reach Cloud API: {e}"}), 500
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    # Local runs on port 5001 so it doesn't conflict with Cloud on 5000 during dev
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    from scanner_manager import start_device_thread
+    start_device_thread()
+    app.run(host='0.0.0.0', port=5001, debug=True, use_reloader=False)

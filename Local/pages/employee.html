@@ -348,22 +348,9 @@
       background: var(--surface2);
       border-top: 1px solid var(--border);
     }
-
-    @media (max-width: 768px) {
-      .split-layout { flex-direction: column !important; }
-      .panel-left { width: 100% !important; min-width: 0 !important; border-right: none; border-bottom: 1px solid var(--border); flex: 1 1 50%; max-height: 50%; }
-      .panel-right { flex: 1 1 50%; min-height: 50%; width: 100%; }
-      .form-grid { grid-template-columns: 1fr !important; }
-      .reg-modal, .reg-modal.lg, .reg-modal.md, .reg-modal.sm { 
-        width: 100% !important; 
-        max-width: 95vw !important; 
-      }
-      .panel-header-top { flex-direction: column; align-items: flex-start; gap: 10px; }
-      .btn-add { width: 100%; justify-content: center; }
-    }
   </style>
 
-<div class="split-layout" style="display:flex; height:100%; width:100%;">
+<div style="display:flex; height:100%; width:100%;">
 
   <!-- ════ LEFT PANEL ════ -->
   <div class="panel-left">
@@ -649,12 +636,14 @@
              <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="color:#10b981; margin-bottom:8px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/></svg>
              <div style="color:#065f46; font-weight:700; font-size:12px; letter-spacing:0.02em;">Finger ${i}/3</div>
              <div style="font-size:9.5px; color:#10b981; text-transform:uppercase; letter-spacing:0.08em; font-weight:700; margin-top:2px;">Enrolled</div>
+             <button onclick="openEnrollModal(${i})" style="margin-top:14px; width:100%; padding:7px; font-size:11px; font-weight:600; border-radius:8px; border:1.5px solid #6ee7b7; background:#fff; color:#059669; cursor:pointer; font-family:inherit; transition:all 0.15s;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='#fff'">Re-enroll</button>
           </div>`;
        } else {
           tabsHtml += `<div style="background:var(--surface2); border:1.5px dashed var(--border); border-radius:12px; padding:16px 12px; text-align:center; display:flex; flex-direction:column; align-items:center;">
              <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="color:var(--muted2); margin-bottom:8px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/></svg>
              <div style="color:var(--text); font-weight:700; font-size:12px; letter-spacing:0.02em;">Finger ${i}/3</div>
              <div style="font-size:9.5px; color:var(--muted2); text-transform:uppercase; letter-spacing:0.08em; font-weight:600; margin-top:2px;">Not Enrolled</div>
+             <button onclick="openEnrollModal(${i})" style="margin-top:14px; width:100%; padding:7px; font-size:11px; font-weight:600; border-radius:8px; border:1.5px solid var(--border); background:#fff; color:var(--navy-mid); cursor:pointer; font-family:inherit; transition:all 0.15s;" onmouseover="this.style.background='var(--navy-light)';this.style.borderColor='#c5d8f5';" onmouseout="this.style.background='#fff';this.style.borderColor='var(--border)';">Enroll Slot</button>
           </div>`;
        }
     }
