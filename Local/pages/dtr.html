@@ -309,12 +309,12 @@
   }
 
   // ── Employee search input ─────────────────────────────────────────────────
-  $('#empSearchInput').on('focus', function () {
+  $(document).off('focus', '#empSearchInput').on('focus', '#empSearchInput', function () {
     renderDropdown($(this).val());
     $('#empDropdown').addClass('open');
   });
 
-  $('#empSearchInput').on('input', function () {
+  $(document).off('input', '#empSearchInput').on('input', '#empSearchInput', function () {
     renderDropdown($(this).val());
     $('#empDropdown').addClass('open');
     selectedEmp = null;
@@ -322,14 +322,14 @@
   });
 
   // Close dropdown on outside click
-  $(document).on('click', function (e) {
+  $(document).off('click.dtrDD').on('click.dtrDD', function (e) {
     if (!$(e.target).closest('.emp-select-wrap').length) {
       $('#empDropdown').removeClass('open');
     }
   });
 
   // Select employee from dropdown
-  $(document).on('click', '.emp-opt', function () {
+  $(document).off('click', '.emp-opt').on('click', '.emp-opt', function () {
     selectedEmp = {
       id:          $(this).data('id'),
       full_name:   $(this).data('name'),
@@ -341,7 +341,7 @@
   });
 
   // ── Generate DTR ──────────────────────────────────────────────────────────
-  $('#btnGenerate').on('click', function () {
+  $(document).off('click', '#btnGenerate').on('click', '#btnGenerate', function () {
     if (!selectedEmp) return;
 
     const year  = $('#selYear').val();
@@ -382,7 +382,7 @@
   });
 
   // ── Print ─────────────────────────────────────────────────────────────────
-  $('#btnPrint').on('click', function () {
+  $(document).off('click', '#btnPrint').on('click', '#btnPrint', function () {
     if (typeof window.printDtr === 'function') {
       window.printDtr();
     }

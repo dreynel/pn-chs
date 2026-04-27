@@ -15,7 +15,9 @@ KIOSK_STATE = {
     'status': 'stopped',     # stopped, running, error
     'last_scan': None,
     'last_error': None,
-    'cooldowns': {}          # employee_id -> last_log_time
+    'cooldowns': {},          # employee_id -> last_log_time
+    'enroll_step': 0,
+    'enroll_error': None
 }
 
 _thread_handle = None
@@ -81,11 +83,14 @@ def _scanner_loop():
     enroll_step = 0
     enroll_timeout = 0
     last_db_check = time.time()
+    last_task_poll = 0
 
     while _running:
         try:
-            # Poll for tasks every iteration if not currently enrolling
-            if not enroll_task:
+            # Poll for tasks every 1 second if not currently enrolling
+            now = time.time()
+            if not enroll_task and (now - last_task_poll >= 1.0):
+                last_task_poll = now
                 try:
                     from db import db_cursor
                     with db_cursor() as (conn, cur):
@@ -97,9 +102,12 @@ def _scanner_loop():
                             enroll_step = 1
                             enroll_timeout = 0
                             last_db_check = time.time()
+                            with state_lock:
+                                KIOSK_STATE['enroll_step'] = 1
+                                KIOSK_STATE['enroll_error'] = None
                             print(f"Discovered new enrollment task: {enroll_task}")
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"Database poll error: {e}")
 
             if enroll_task:
                 # Check DB for cancellation every 1.5 seconds
@@ -143,22 +151,54 @@ def _scanner_loop():
 
                         # Check for duplicates
                         if len(id_map) > 0:
-                            fid, score = zkfp.DBIdentify(tmp)
-                            if score >= MATCH_THRESHOLD:
-                                matched_name = id_map.get(fid, {}).get('name', 'Unknown')
-                                print(f"Error: Fingerprint already enrolled for '{matched_name}' (score: {score}).")
-                                try:
-                                    with db_cursor(commit=True) as (conn, cur):
-                                        cur.execute("UPDATE tblenrollment_tasks SET status='error' WHERE id=%s", (enroll_task['id'],))
-                                except Exception: pass
-                                enroll_task = None
-                                time.sleep(2)
-                                continue
+                            try:
+                                fid, score = zkfp.DBIdentify(tmp)
+                                if score >= MATCH_THRESHOLD:
+                                    matched_emp = id_map.get(fid, {})
+                                    matched_emp_id = matched_emp.get('employee_id')
+                                    if matched_emp_id != enroll_task['employee_id']:
+                                        is_ghost = False
+                                        try:
+                                            with db_cursor() as (conn, cur):
+                                                cur.execute("SELECT id FROM tblemployee WHERE employee_id=%s", (matched_emp_id,))
+                                                if not cur.fetchone():
+                                                    is_ghost = True
+                                        except Exception: pass
+                                        
+                                        if is_ghost:
+                                            print(f"Ghost fingerprint detected for deleted {matched_emp_id}. Wiping from RAM and overwriting.")
+                                            try:
+                                                zkfp.DBDel(fid)
+                                                if fid in id_map:
+                                                    del id_map[fid]
+                                            except Exception: pass
+                                        else:
+                                            matched_name = matched_emp.get('name', 'Unknown')
+                                            print(f"Error: Fingerprint already belongs to '{matched_name}' (score: {score}).")
+                                            try:
+                                                with db_cursor(commit=True) as (conn, cur):
+                                                    cur.execute("UPDATE tblenrollment_tasks SET status='error' WHERE id=%s", (enroll_task['id'],))
+                                            except Exception: pass
+                                            enroll_task = None
+                                            
+                                            with state_lock:
+                                                KIOSK_STATE['enroll_step'] = 0
+                                                KIOSK_STATE['enroll_error'] = f"Fingerprint already assigned to {matched_name}."
+                                                
+                                            time.sleep(2)
+                                            continue
+                                    else:
+                                        print(f"Fingerprint belongs to same employee ({matched_emp_id}). Allowing overwrite.")
+                            except Exception:
+                                # Normal behavior when fingerprint is not found
+                                pass
 
                         enroll_templates.append(tmp)
                         enroll_step += 1
+                        with state_lock:
+                            KIOSK_STATE['enroll_step'] = enroll_step
                         print(f"Scan {enroll_step - 1} successful. Please lift finger.")
-                        time.sleep(1.5)  # Wait for finger lift
+                        time.sleep(0.8)  # Wait for finger lift
                 else:
                     # Proceed to merge all 3 scans
                     print("Merging fingerprint data...")
@@ -210,6 +250,8 @@ def _scanner_loop():
                     
                     # Clear task
                     enroll_task = None
+                    with state_lock:
+                        KIOSK_STATE['enroll_step'] = 0
 
             else:
                 # Normal Kiosk Scanning Mode
@@ -217,34 +259,50 @@ def _scanner_loop():
                 if res:
                     tmp, img = res
                     if len(id_map) > 0:
-                        fid, score = zkfp.DBIdentify(tmp)
-                        if score >= MATCH_THRESHOLD:
-                            user_info = id_map.get(fid)
-                            if user_info:
-                                emp_id = user_info['employee_id']
-                                now = time.time()
-                                
+                        try:
+                            fid, score = zkfp.DBIdentify(tmp)
+                            if score >= MATCH_THRESHOLD:
+                                user_info = id_map.get(fid)
+                                if user_info:
+                                    emp_id = user_info['employee_id']
+                                    now = time.time()
+                                    
+                                    with state_lock:
+                                        last_log = KIOSK_STATE['cooldowns'].get(emp_id, 0)
+                                        if now - last_log < 10:  # 10 second cooldown
+                                            time.sleep(1)
+                                            continue
+                                            
+                                        print(f"Identified: {user_info['name']} (score: {score})")
+                                        KIOSK_STATE['last_scan'] = {
+                                            'employee_id': emp_id,
+                                            'name': user_info['name'],
+                                            'timestamp': now
+                                        }
+                                        KIOSK_STATE['cooldowns'][emp_id] = now
+                                    time.sleep(2)
+                            else:
                                 with state_lock:
-                                    last_log = KIOSK_STATE['cooldowns'].get(emp_id, 0)
-                                    if now - last_log < 10:  # 10 second cooldown
-                                        time.sleep(1)
-                                        continue
-                                        
-                                    print(f"Identified: {user_info['name']} (score: {score})")
-                                    KIOSK_STATE['last_scan'] = {
-                                        'employee_id': emp_id,
-                                        'name': user_info['name'],
-                                        'timestamp': now
+                                    KIOSK_STATE['last_error'] = {
+                                        'message': 'Fingerprint not recognized.',
+                                        'timestamp': time.time()
                                     }
-                                    KIOSK_STATE['cooldowns'][emp_id] = now
-                                time.sleep(2)
-                        else:
+                                time.sleep(1.5)
+                        except Exception:
+                            # Thrown when fingerprint is not matched at all
                             with state_lock:
                                 KIOSK_STATE['last_error'] = {
                                     'message': 'Fingerprint not recognized.',
                                     'timestamp': time.time()
                                 }
                             time.sleep(1.5)
+                    else:
+                        with state_lock:
+                            KIOSK_STATE['last_error'] = {
+                                'message': 'Scanner active, but no fingerprints registered in system.',
+                                'timestamp': time.time()
+                            }
+                        time.sleep(1.5)
 
             time.sleep(0.1)
 

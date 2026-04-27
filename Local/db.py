@@ -1,15 +1,7 @@
 import mysql.connector
 from mysql.connector import Error
+from mysql.connector import pooling
 from contextlib import contextmanager
-
-# DB_CONFIG = {
-#     "host":     "localhost",
-#     "database": "dbpnchs",
-#     "user":     "root",
-#     "password": "007622",
-#     "charset":  "utf8mb4",
-#     "autocommit": False,
-# }
 
 DB_CONFIG = {
     "host":     "34.134.43.148",
@@ -20,9 +12,17 @@ DB_CONFIG = {
     "autocommit": False,
 }
 
+# Create a connection pool to avoid extremely slow remote TCP/SSL handshakes on every payload
+db_pool = mysql.connector.pooling.MySQLConnectionPool(
+    pool_name="cloud_pool",
+    pool_size=15,
+    pool_reset_session=True,
+    **DB_CONFIG
+)
+
 def get_connection():
-    """Open and return a new MySQL connection."""
-    return mysql.connector.connect(**DB_CONFIG)
+    """Returns a connection from the connection pool instantly."""
+    return db_pool.get_connection()
 
 
 @contextmanager

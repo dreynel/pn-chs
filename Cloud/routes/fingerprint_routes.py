@@ -10,10 +10,8 @@ def start_enrollment(emp_id, finger_index):
     # The local app will poll this task and execute it.
     try:
         with db_cursor(commit=True) as (conn, cur):
-            # Check if there's already a pending task
-            cur.execute("SELECT id FROM tblenrollment_tasks WHERE status='pending'")
-            if cur.fetchone():
-                return jsonify({'error': 'Scanner is currently in use by another enrollment process.'}), 409
+            # Force cancel any stuck pending task to avoid 409 locked scanner error
+            cur.execute("UPDATE tblenrollment_tasks SET status='cancelled' WHERE status='pending'")
             
             cur.execute("""
                 INSERT INTO tblenrollment_tasks (employee_id, finger_index, status) 

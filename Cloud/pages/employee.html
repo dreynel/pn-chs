@@ -832,7 +832,11 @@
   function closeFormModal() { $('#formModal').removeClass('open'); }
 
   // ── Save (Create / Update) ────────────────────────────────────────────────
+  let isSaving = false;
+  
   function saveEmployee() {
+    if (isSaving) return;
+    
     const pay_heads = [];
     $('#phFormRows .ph-form-row').each(function () {
       const name = $(this).find('[data-ph-name]').val().trim();
@@ -866,6 +870,8 @@
       toast('Please fill in all required fields.', 'error'); return;
     }
 
+    isSaving = true;
+
     const url    = editMode ? API + '/' + selectedId : API + '/';
     const method = editMode ? 'PUT' : 'POST';
 
@@ -875,12 +881,14 @@
       contentType: 'application/json',
       data: JSON.stringify(payload),
       success: function (data) {
+        isSaving = false;
         closeFormModal();
         toast(editMode ? 'Employee updated!' : 'Employee added!');
         loadList($('#searchInput').val());
         selectEmployee(data.id);
       },
       error: function (xhr) {
+        isSaving = false;
         const err = xhr.responseJSON;
         toast((err && err.error) || 'Something went wrong.', 'error');
       }
@@ -943,11 +951,14 @@
 
   function pollEnrollment() {
       $.get('/api/fingerprint/enroll_status', function(res) {
+          if (!enrollInterval) return; // Guard against overlapping AJAX responses
+          
           if (res.status === 'enrolling') {
               $('#enrollStatusTitle').text(res.step > 0 ? 'Scanning Step ' + res.step + ' of 3' : 'Initializing...');
               $('#enrollStatusText').html(res.message);
           } else if (res.status === 'success') {
               clearInterval(enrollInterval);
+              enrollInterval = null;
               $('#enrollStatusTitle').text('Success');
               $('#enrollStatusText').text(res.message);
               toast('Fingerprint enrolled successfully!', 'success');
@@ -955,12 +966,15 @@
               setTimeout(() => { $('#enrollModal').removeClass('open'); }, 2000);
           } else if (res.status === 'error') {
               clearInterval(enrollInterval);
+              enrollInterval = null;
               $('#enrollStatusTitle').text('Error');
               $('#enrollStatusText').text(res.error || 'Unknown error');
               $('#enrollIcon svg').css('color', 'var(--red)');
           }
       }).fail(function() {
+          if (!enrollInterval) return;
           clearInterval(enrollInterval);
+          enrollInterval = null;
           $('#enrollStatusTitle').text('Connection Error');
           $('#enrollStatusText').text('Could not check status.');
           $('#enrollIcon svg').css('color', 'var(--red)');
@@ -968,7 +982,10 @@
   }
 
   function cancelEnrollment() {
-      if (enrollInterval) clearInterval(enrollInterval);
+      if (enrollInterval) {
+          clearInterval(enrollInterval);
+          enrollInterval = null;
+      }
       $.post('/api/fingerprint/enroll_cancel', function() {
           $('#enrollModal').removeClass('open');
       });

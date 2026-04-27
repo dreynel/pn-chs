@@ -1,5 +1,5 @@
 import mysql.connector
-from mysql.connector import Error
+from mysql.connector import Error, pooling
 from contextlib import contextmanager
 
 # DB_CONFIG = {
@@ -20,8 +20,22 @@ DB_CONFIG = {
     "autocommit": False,
 }
 
+# Create a connection pool to drastically reduce TCP handshake latency on every ping
+try:
+    connection_pool = pooling.MySQLConnectionPool(
+        pool_name="cloud_pool",
+        pool_size=15,  # Match the Local configuration
+        pool_reset_session=True,
+        **DB_CONFIG
+    )
+except Error as e:
+    print(f"Error initializing connection pool: {e}")
+    connection_pool = None
+
 def get_connection():
-    """Open and return a new MySQL connection."""
+    """Open and return a new MySQL connection from the pool."""
+    if connection_pool:
+        return connection_pool.get_connection()
     return mysql.connector.connect(**DB_CONFIG)
 
 

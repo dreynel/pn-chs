@@ -232,20 +232,15 @@
   }
 
   // Bind change on date picker
-  $('#logDateFilter').on('change', function() {
+  $(document).off('change', '#logDateFilter').on('change', '#logDateFilter', function() {
     loadBiometricLogs();
   });
 
   // Bind search input
-  $('#logSearchInput').on('input', function() {
+  $(document).off('input', '#logSearchInput').on('input', '#logSearchInput', function() {
     renderBiometricLogs($(this).val());
   });
 
   // Init
-  $(document).ready(function() {
-    // Optional: Default to today?
-    // Let's default to no date to see all logs initially unless there's thousands,
-    // but a date filter is visually clear.
-    loadBiometricLogs();
-  });
+  loadBiometricLogs();
 </script>
