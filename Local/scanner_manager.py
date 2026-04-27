@@ -79,6 +79,8 @@ def _scanner_loop():
     enroll_task = None
     enroll_templates = []
     enroll_step = 0
+    enroll_timeout = 0
+    last_db_check = time.time()
 
     while _running:
         try:
@@ -93,19 +95,51 @@ def _scanner_loop():
                             enroll_task = task
                             enroll_templates = []
                             enroll_step = 1
+                            enroll_timeout = 0
+                            last_db_check = time.time()
                             print(f"Discovered new enrollment task: {enroll_task}")
                 except Exception:
                     pass
 
             if enroll_task:
+                # Check DB for cancellation every 1.5 seconds
+                now = time.time()
+                if now - last_db_check >= 1.5:
+                    last_db_check = now
+                    try:
+                        from db import db_cursor
+                        with db_cursor() as (conn, cur):
+                            cur.execute("SELECT status FROM tblenrollment_tasks WHERE id=%s", (enroll_task['id'],))
+                            chk = cur.fetchone()
+                            if not chk or chk['status'] != 'pending':
+                                print(f"Enroll task {enroll_task['id']} was cancelled or modified. Dropping.")
+                                enroll_task = None
+                                continue
+                    except Exception:
+                        pass
+                
                 if enroll_step <= 3:
-                    print(f"Enroll step {enroll_step}/3... Please scan finger.")
+                    # Timeout after 60s of inactivity
+                    if enroll_timeout > 600:  # 600 * 0.1s = 60s
+                        print("Enrollment timeout: 60s elapsed without input.")
+                        try:
+                            from db import db_cursor
+                            with db_cursor(commit=True) as (conn, cur):
+                                cur.execute("UPDATE tblenrollment_tasks SET status='error' WHERE id=%s", (enroll_task['id'],))
+                        except Exception: pass
+                        enroll_task = None
+                        continue
+
                     res = zkfp.AcquireFingerprint()
                     if res:
                         tmp, img = res
                         if not tmp or len(tmp) == 0:
+                            enroll_timeout += 1
                             time.sleep(0.1)
                             continue
+
+                        # Reset timeout since we got a scan
+                        enroll_timeout = 0
 
                         # Check for duplicates
                         if len(id_map) > 0:
