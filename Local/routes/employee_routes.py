@@ -59,6 +59,18 @@ def _row_to_dict(row, pay_heads, enrolled_fingers=None):
     }
 
 
+# ── GET NEXT ID ────────────────────────────────────────────────────────────────
+@employee_bp.route('/next_id', methods=['GET'])
+def get_next_id():
+    try:
+        with db_cursor() as (conn, cur):
+            new_id = _next_employee_id(cur)
+        return jsonify({"next_id": new_id})
+    except Error as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
 # ── LIST ───────────────────────────────────────────────────────────────────────
 @employee_bp.route('/', methods=['GET'])
 def list_employees():
@@ -118,7 +130,12 @@ def create_employee():
             return jsonify({"error": f"'{field}' is required"}), 400
     try:
         with db_cursor(commit=True) as (conn, cur):
-            new_id = _next_employee_id(cur)
+            provided_id = data.get('employee_id', '').strip()
+            if provided_id:
+                new_id = provided_id
+            else:
+                new_id = _next_employee_id(cur)
+                
             cur.execute("""
                 INSERT INTO tblemployee
                     (employee_id, first_name, last_name, designation, birthday, email, contact, address)

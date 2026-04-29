@@ -480,6 +480,7 @@
     <div class="modal-body">
       <div class="form-section-title">Personal Information</div>
       <div class="form-grid">
+        <div class="form-group"><label>Employee ID</label><input type="text" id="fEmployeeId" placeholder="Auto-generated" disabled></div>
         <div class="form-group"><label>First Name *</label><input type="text" id="fFirstName" placeholder="Maria"></div>
         <div class="form-group"><label>Last Name *</label><input type="text" id="fLastName" placeholder="Santos"></div>
         <div class="form-group">
@@ -785,7 +786,7 @@
   $(document).on('click', '#btnAddPh', function () { addPhRow(); });
 
   function clearForm() {
-    $('#fFirstName, #fLastName, #fDesignation, #fBirthday, #fEmail, #fContact, #fAddress').val('');
+    $('#fEmployeeId, #fFirstName, #fLastName, #fDesignation, #fBirthday, #fEmail, #fContact, #fAddress').val('');
     $('#phFormRows').empty();
   }
 
@@ -795,6 +796,16 @@
     clearForm();
     addPhRow({ pay_head: 'Basic Salary', amount: 0, category: 'Earning', mode: 'Amount', percentage_value: 0 });
     $('#modalTitle').text('Add Employee');
+    $('#fEmployeeId').val('Loading...').prop('disabled', true);
+    $.get(API + '/next_id', function(res) {
+       if(res.next_id) {
+           $('#fEmployeeId').val(res.next_id);
+       } else {
+           $('#fEmployeeId').val('Auto-generated');
+       }
+    }).fail(function() {
+       $('#fEmployeeId').val('Auto-generated');
+    });
     $('#formModal').addClass('open');
   }
 
@@ -805,6 +816,7 @@
     clearForm();
 
     $.get(API + '/' + selectedId, function (emp) {
+      $('#fEmployeeId').val(emp.id).prop('disabled', true);
       $('#fFirstName').val(emp.first_name);
       $('#fLastName').val(emp.last_name);
       $('#fDesignation').val(emp.designation);
@@ -845,6 +857,7 @@
     });
 
     const payload = {
+      employee_id: $('#fEmployeeId').val().trim(),
       first_name:  $('#fFirstName').val().trim(),
       last_name:   $('#fLastName').val().trim(),
       designation: $('#fDesignation').val().trim(),

@@ -1,21 +1,13 @@
-import mysql.connector
+import sys
+sys.path.append('e:\\proj\\pnchs\\Local')
+from db import db_cursor
 
-DB_CONFIG = {
-    "host":     "34.134.43.148",
-    "database": "dbpnchs",
-    "user":     "root",
-    "password": "Mlfd5rGPn$Y|-2C0",
-    "charset":  "utf8mb4",
-    "autocommit": False,
-}
-
-conn = mysql.connector.connect(**DB_CONFIG)
-cur = conn.cursor()
-cur.execute("""
-SELECT TABLE_NAME, COLUMN_NAME 
-FROM INFORMATION_SCHEMA.COLUMNS 
-WHERE TABLE_SCHEMA = 'dbpnchs' 
-AND COLUMN_NAME = 'employee_id'
-""")
-for row in cur.fetchall():
-    print(row)
+try:
+    with db_cursor() as (conn, cur):
+        cur.execute("DESCRIBE tblemployee")
+        rows = cur.fetchall()
+        print("tblemployee:")
+        for row in rows:
+            print(row)
+except Exception as e:
+    print(f"Error: {e}")
