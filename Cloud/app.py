@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory
-from routes import employee_bp, dtr_bp, payroll_bp, fingerprint_bp, attendance_bp, registry_bp, dashboard_bp
+from routes import employee_bp, dtr_bp, payroll_bp, fingerprint_bp, attendance_bp, registry_bp, dashboard_bp, salary_grade_bp
 import os
 
 app = Flask(__name__)
@@ -12,7 +12,9 @@ app.register_blueprint(payroll_bp)
 app.register_blueprint(fingerprint_bp)
 app.register_blueprint(attendance_bp)
 app.register_blueprint(registry_bp)
+app.register_blueprint(salary_grade_bp)
 app.register_blueprint(dashboard_bp)
+
 
 # Auto-create DB tables on startup
 with app.app_context():
@@ -108,7 +110,7 @@ def pages(filename):
 @app.route('/employees')
 @login_required
 def employees():
-    if session['user'].get('role') != 'HR':
+    if session['user'].get('role') not in ['Admin', 'Principal', 'HR', 'HR Officer']:
         return redirect(url_for('dashboard'))
     return render_template('index.html', user=session['user'], initial_page='/pages/employee.html', title='Employees')
 
@@ -116,14 +118,14 @@ def employees():
 @app.route('/payroll')
 @login_required
 def payroll():
-    if session['user'].get('role') not in ['Admin', 'Finance']:
+    if session['user'].get('role') not in ['Admin', 'Principal', 'Finance', 'Finance Officer']:
         return redirect(url_for('dashboard'))
     return render_template('index.html', user=session['user'], initial_page='/pages/payroll.html', title='Payroll Processing')
 
 @app.route('/payroll_approvals')
 @login_required
 def payroll_approvals():
-    if session['user'].get('role') != 'Admin':
+    if session['user'].get('role') not in ['Admin', 'Principal']:
         return redirect(url_for('dashboard'))
     return render_template('index.html', user=session['user'], initial_page='/pages/payroll_approval.html', title='Payroll Approvals')
 
@@ -131,7 +133,7 @@ def payroll_approvals():
 @app.route('/holidays')
 @login_required
 def holidays():
-    if session['user'].get('role') not in ['Admin', 'Finance', 'HR']:
+    if session['user'].get('role') not in ['Admin', 'Principal', 'Finance', 'Finance Officer', 'HR', 'HR Officer']:
         return redirect(url_for('dashboard'))
     return render_template('index.html', user=session['user'], initial_page='/pages/holidays.html', title='Holiday Calendar')
 
@@ -140,6 +142,15 @@ def holidays():
 @login_required
 def leaves():
     return render_template('index.html', user=session['user'], initial_page='/pages/leaves.html', title='Leave Management')
+
+
+@app.route('/salary_grades')
+@login_required
+def salary_grades():
+    if session['user'].get('role') not in ['Admin', 'Principal', 'Finance', 'Finance Officer', 'HR', 'HR Officer']:
+        return redirect(url_for('dashboard'))
+    return render_template('index.html', user=session['user'], initial_page='/pages/salary_grades.html', title='Salary Grade Management')
+
 
 
 @app.route('/dtr')
@@ -163,7 +174,7 @@ def payroll_report():
 @app.route('/registry')
 @login_required
 def registry():
-    if session['user'].get('role') not in ['Admin', 'Finance']:
+    if session['user'].get('role') not in ['Admin', 'Principal', 'Finance', 'Finance Officer']:
         return redirect(url_for('dashboard'))
     return render_template('index.html', user=session['user'], initial_page='/pages/registry.html', title='Global Registry')
 
@@ -178,6 +189,13 @@ def auth_me():
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
+@app.after_request
+def add_no_cache_headers(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 if __name__ == '__main__':
     app.run(debug=True)

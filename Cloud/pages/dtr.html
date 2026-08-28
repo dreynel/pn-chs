@@ -265,18 +265,27 @@
 
   // ── Load employee list ────────────────────────────────────────────────────
   $.get('/api/auth/me', function (user) {
-    if (user.role === 'Employee') {
+    if (user.role === 'Employee' && user.employee_id) {
       $('#empFilterGroup').hide();
       selectedEmp = {
         id: user.employee_id,
         full_name: user.name,
         designation: ''
       };
-      $('#btnGenerate').prop('disabled', false);
+      $('#btnGenerate').prop('disabled', false).click();
     } else {
       $.get('/api/dtr/employees', function (data) {
-        employees = data;
+        employees = data || [];
         renderDropdown('');
+        if (employees.length > 0) {
+          selectedEmp = {
+            id: employees[0].id,
+            full_name: employees[0].full_name,
+            designation: employees[0].designation
+          };
+          $('#empSearchInput').val(selectedEmp.full_name);
+          $('#btnGenerate').prop('disabled', false).click();
+        }
       });
     }
   });

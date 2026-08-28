@@ -1,39 +1,33 @@
+import os
 import mysql.connector
 from mysql.connector import Error, pooling
 from contextlib import contextmanager
 
-# DB_CONFIG = {
-#     "host":     "localhost",
-#     "database": "dbpnchs",
-#     "user":     "root",
-#     "password": "007622",
-#     "charset":  "utf8mb4",
-#     "autocommit": False,
-# }
-
 DB_CONFIG = {
-    "host":     "34.134.43.148",
-    "database": "dbpnchs",
-    "user":     "root",
-    "password": "Mlfd5rGPn$Y|-2C0",
+    "host":     os.getenv("DB_HOST", "localhost"),
+    "database": os.getenv("DB_NAME", "dbpnchs"),
+    "user":     os.getenv("DB_USER", "root"),
+    "password": os.getenv("DB_PASSWORD", "007622"),
     "charset":  "utf8mb4",
     "autocommit": False,
 }
 
-# Create a connection pool to drastically reduce TCP handshake latency on every ping
+# Create a connection pool for local MySQL database
+connection_pool = None
 try:
     connection_pool = pooling.MySQLConnectionPool(
-        pool_name="cloud_pool",
-        pool_size=15,  # Match the Local configuration
+        pool_name="local_pool",
+        pool_size=15,
         pool_reset_session=True,
         **DB_CONFIG
     )
+    print("[OK] Connected to local MySQL connection pool.")
 except Error as e:
-    print(f"Error initializing connection pool: {e}")
+    print(f"Error initializing local database connection pool: {e}")
     connection_pool = None
 
 def get_connection():
-    """Open and return a new MySQL connection from the pool."""
+    """Open and return a new MySQL connection from the local pool."""
     if connection_pool:
         return connection_pool.get_connection()
     return mysql.connector.connect(**DB_CONFIG)

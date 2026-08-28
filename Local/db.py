@@ -3,18 +3,20 @@ from mysql.connector import Error
 from mysql.connector import pooling
 from contextlib import contextmanager
 
+import os
+
 DB_CONFIG = {
-    "host":     "34.134.43.148",
-    "database": "dbpnchs",
-    "user":     "root",
-    "password": "Mlfd5rGPn$Y|-2C0",
+    "host":     os.getenv("DB_HOST", "localhost"),
+    "database": os.getenv("DB_NAME", "dbpnchs"),
+    "user":     os.getenv("DB_USER", "root"),
+    "password": os.getenv("DB_PASSWORD", "007622"),
     "charset":  "utf8mb4",
     "autocommit": False,
 }
 
-# Create a connection pool to avoid extremely slow remote TCP/SSL handshakes on every payload
+# Create a connection pool to avoid slow handshakes on every payload
 db_pool = mysql.connector.pooling.MySQLConnectionPool(
-    pool_name="cloud_pool",
+    pool_name="local_scanner_pool",
     pool_size=15,
     pool_reset_session=True,
     **DB_CONFIG

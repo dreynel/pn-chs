@@ -662,16 +662,20 @@
   const fShort    = num => '₱' + (num >= 1e6 ? (num/1e6).toFixed(1)+'M' : num.toLocaleString());
 
   function animateValue(id, start, end, duration, formatFn) {
+    const el = document.getElementById(id);
+    if (!el) return;
     if (start === end) {
-      document.getElementById(id).innerHTML = formatFn ? formatFn(end) : end;
+      el.innerHTML = formatFn ? formatFn(end) : end;
       return;
     }
     let startTimestamp = null;
     const step = (timestamp) => {
+      const targetEl = document.getElementById(id);
+      if (!targetEl) return;
       if (!startTimestamp) startTimestamp = timestamp;
       const progress = Math.min((timestamp - startTimestamp) / duration, 1);
       const current = Math.floor(progress * (end - start) + start);
-      document.getElementById(id).innerHTML = formatFn ? formatFn(current) : current;
+      targetEl.innerHTML = formatFn ? formatFn(current) : current;
       if (progress < 1) {
         window.requestAnimationFrame(step);
       }

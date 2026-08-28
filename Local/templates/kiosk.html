@@ -242,6 +242,74 @@
     .toast-title { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--navy); margin-bottom: 8px; }
     .toast-msg { font-size: 1.2rem; color: var(--muted); }
 
+    /* ── Device Trap Overlay ── */
+    .device-trap-overlay {
+      position: fixed; inset: 0; z-index: 2000;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      display: none;
+      align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .device-trap-overlay.show { display: flex; animation: trapIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    @keyframes trapIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+    .device-trap-card {
+      background: #ffffff;
+      width: 100%; max-width: 520px;
+      border-radius: 24px;
+      padding: 40px 36px;
+      text-align: center;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+      border: 1.5px solid var(--border);
+    }
+    .trap-icon-wrap {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: #fef2f2;
+      border: 2px solid #fecaca;
+      color: #ef4444;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .trap-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.65rem; font-weight: 700; color: var(--navy);
+      margin-bottom: 8px;
+    }
+    .trap-desc {
+      font-size: 13.5px; color: var(--muted); line-height: 1.5;
+      margin-bottom: 22px;
+    }
+    .trap-status-box {
+      background: #f8fafc; border: 1px solid #e2e8f0;
+      border-radius: 12px; padding: 12px 16px;
+      font-size: 12px; color: var(--navy); font-weight: 600;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .trap-spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(30, 58, 95, 0.2);
+      border-top-color: var(--navy);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .btn-retry {
+      background: var(--navy); color: #fff; border: none;
+      padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-retry:hover { background: var(--navy-mid); }
+    .btn-setup {
+      background: #f1f5f9; color: var(--navy); border: 1px solid var(--border);
+      padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      text-decoration: none; display: inline-flex; align-items: center;
+    }
+    .btn-setup:hover { background: #e2e8f0; }
+
+
   </style>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
@@ -254,7 +322,8 @@
       </div>
       <div class="brand-text">PNCHS Attendance</div>
     </div>
-    <a href="/dashboard" class="btn-exit" onclick="stopScanner()">Exit Kiosk</a>
+    <a href="/enrollment" class="btn-exit" onclick="stopScanner()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-2px; margin-right:4px;"><path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/></svg> Fingerprint Setup</a>
+
   </div>
 
   <div class="panel">
@@ -323,6 +392,30 @@
     </div>
   </div>
 
+  <!-- ── Device Disconnected Trap Overlay ── -->
+  <div class="device-trap-overlay" id="deviceTrapOverlay">
+    <div class="device-trap-card">
+      <div class="trap-icon-wrap">
+        <svg width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+      </div>
+      <h3 class="trap-title">Fingerprint Scanner Disconnected</h3>
+      <p class="trap-desc">The Attendance Kiosk requires a physical USB Biometric Scanner connected to this station to accept attendance scans.</p>
+      
+      <div class="trap-status-box">
+        <span class="trap-spinner"></span>
+        <span>Polling USB biometric reader status...</span>
+      </div>
+
+      <div style="display:flex; gap:12px; margin-top:24px; justify-content:center;">
+        <button class="btn-retry" onclick="pollBackend()">Check Connection Again</button>
+        <a href="/enrollment" class="btn-setup">Admin Setup</a>
+      </div>
+    </div>
+  </div>
+
+
   <script>
     // ── Clock ───────────────────────────────────────────
     function updateClock() {
@@ -359,8 +452,10 @@
 
     function startScanner() {
       $.post('/api/attendance/start', function() {
-        pollInterval = setInterval(pollBackend, 1000);
+        pollInterval = setInterval(pollBackend, 2000);
       }).fail(function() {
+
+
         $('#statusText').text("Scanner Offline").css('color', 'var(--red)');
         $('#fpIcon').removeClass('scanning').addClass('error');
       });
@@ -374,6 +469,13 @@
     function pollBackend() {
       $.get('/api/attendance/poll', function(res) {
         if (res.status === 'running') {
+          // Device is connected and active! Unlock Kiosk.
+          $('#deviceTrapOverlay').removeClass('show');
+          $('#statusText').text("Ready to Scan").css('color', 'var(--navy)');
+          if (!$('#fpIcon').hasClass('success')) {
+            $('#fpIcon').addClass('scanning').removeClass('error');
+          }
+
           // Initialize local timestamp from server time on the first valid poll
           if (lastScanTimestamp === 0 && res.server_time) {
             lastScanTimestamp = res.server_time;
@@ -389,42 +491,21 @@
             // Recognized finger check failed
             showToast('Not Recognized', res.last_error.message, true);
           }
-        } else if (res.status === 'error') {
-          $('#statusText').text("Scanner Error").css('color', 'var(--red)');
+        } else {
+          // USB Device disconnected or offline! Lock Kiosk screen with hardware trap overlay.
+          $('#deviceTrapOverlay').addClass('show');
+          $('#statusText').text("Scanner Disconnected").css('color', 'var(--red)');
           $('#fpIcon').removeClass('scanning').addClass('error');
-        } else if (res.status === 'stopped') {
-           // Auto-restart if we want it to be resilient
-           setTimeout(() => {
-               $.post('/api/attendance/start');
-           }, 2000);
         }
+      }).fail(function() {
+        $('#deviceTrapOverlay').addClass('show');
       });
     }
 
-    function logAttendance(empId, empName) {
-      // Pause visual scanning
-      $('#fpIcon').removeClass('scanning').addClass('success');
-      $('#statusText').text(`Identifying...`);
-      
-      const typeLabels = {
-        'am_time_in': 'AM Time In',
-        'am_time_out': 'AM Time Out',
-        'pm_time_in': 'PM Time In',
-        'pm_time_out': 'PM Time Out'
-      };
 
-      $.post(JSON.stringify({ employee_id: empId, log_type: currentLogType }), function(config) {
-          return {
-              url: '/api/attendance/log',
-              contentType: 'application/json',
-              data: config
-          };
-      }(), function(response) {
-         showToast('Success', `${empName} — ${typeLabels[currentLogType]}`);
-      }).fail(function(xhr) {
-         showToast('Error', (xhr.responseJSON && xhr.responseJSON.error) || 'Failed to record attendance', true);
-      });
-    }
+
+
+    let isCoolingDown = false;
 
     function showToast(title, msg, isError = false) {
       $('#toastTitle').text(title);
@@ -439,11 +520,24 @@
       
       $('#toast').addClass('show');
       
-      setTimeout(() => {
-        $('#toast').removeClass('show');
-        $('#fpIcon').removeClass('success').removeClass('error').addClass('scanning');
-        $('#statusText').text("Ready to Scan");
-      }, 3500);
+      // 7-second recalibration loading countdown before next scan is enabled
+      isCoolingDown = true;
+      let secondsLeft = 7;
+      $('#statusText').text(`Recalibrating scanner... (${secondsLeft}s)`).css('color', 'var(--accent)');
+      $('#fpIcon').removeClass('scanning success error').addClass('loading');
+
+      const cdInterval = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft > 0) {
+          $('#statusText').text(`Recalibrating scanner... (${secondsLeft}s)`);
+        } else {
+          clearInterval(cdInterval);
+          isCoolingDown = false;
+          $('#toast').removeClass('show');
+          $('#fpIcon').removeClass('loading success error').addClass('scanning');
+          $('#statusText').text("Ready to Scan").css('color', '');
+        }
+      }, 1000);
     }
 
     // Handle normal AJAX POST correctly
@@ -453,6 +547,8 @@
     
     // Override logAttendance logic to properly use $.ajax
     function logAttendance(empId, empName) {
+      if (isCoolingDown) return;
+
       // Pause visual scanning
       $('#fpIcon').removeClass('scanning').addClass('success');
       $('#statusText').text(`Identifying...`);

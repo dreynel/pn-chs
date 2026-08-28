@@ -332,35 +332,7 @@
         <button type="submit" class="btn-signin fade-up d4">Sign In</button>
       </form>
 
-      <div class="divider fade-up d4">
-        <div class="divider-line"></div>
-        <span class="divider-label">Demo Credentials</span>
-        <div class="divider-line"></div>
-      </div>
 
-      <div class="demo-card fade-up d5">
-        <div class="demo-row">
-          <div>
-            <div class="demo-role">Administrator</div>
-            <div class="demo-creds">admin · admin123</div>
-          </div>
-          <button type="button" class="demo-use" onclick="fillDemo('admin','admin123')">Use →</button>
-        </div>
-        <div class="demo-row">
-          <div>
-            <div class="demo-role">Finance Department</div>
-            <div class="demo-creds">finance · finance123</div>
-          </div>
-          <button type="button" class="demo-use" onclick="fillDemo('finance','finance123')">Use →</button>
-        </div>
-        <div class="demo-row">
-          <div>
-            <div class="demo-role">Faculty Employee</div>
-            <div class="demo-creds">bjohnlenard@gmail.com · EMP-001</div>
-          </div>
-          <button type="button" class="demo-use" onclick="fillDemo('bjohnlenard@gmail.com','EMP-001')">Use →</button>
-        </div>
-      </div>
 
       <div class="form-footer">Secured with 256-bit AES · SOC 2 Type II Compliant</div>
     </div>
@@ -375,10 +347,7 @@
       const i = document.getElementById('passInput');
       i.type = i.type === 'password' ? 'text' : 'password';
     }
-    function fillDemo(email, pass) {
-      document.querySelector('input[name="email"]').value = email;
-      document.querySelector('input[name="password"]').value = pass;
-    }
+
   </script>
 </body>
 </html>

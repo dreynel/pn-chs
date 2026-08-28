@@ -14,36 +14,19 @@ app.register_blueprint(attendance_bp)
 app.register_blueprint(registry_bp)
 app.register_blueprint(dashboard_bp)
 
-# Auto-create DB tables on startup
-with app.app_context():
-    try:
-        from init_db import init
-        init()
-    except Exception as e:
-        print(f"⚠️  DB init warning: {e}")
+# DB Initialization & Real-Time Biometric Scanner Start
+try:
+    from init_db import init
+    init()
+except Exception as e:
+    pass
 
-# DB Users are stored in tblusers.
+try:
+    from scanner_manager import start_device_thread
+    start_device_thread()
+except Exception as e:
+    print(f"Failed to start scanner thread: {e}")
 
-
-import threading
-import requests
-import time
-
-cloud_reachable = True
-# Only verify via live cloud URL, not localhost
-CLOUD_API_URL = os.environ.get('CLOUD_API_URL', 'https://pn-chs.onrender.com')
-
-def check_cloud_status():
-    global cloud_reachable
-    while True:
-        try:
-            requests.get(CLOUD_API_URL, timeout=5)
-            cloud_reachable = True
-        except Exception:
-            cloud_reachable = False
-        time.sleep(10)
-
-threading.Thread(target=check_cloud_status, daemon=True).start()
 
 def login_required(f):
     from functools import wraps
@@ -54,34 +37,22 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
-@app.before_request
-def restrict_offline():
-    if not cloud_reachable:
-        if request.endpoint and ('static' in request.endpoint or request.endpoint == 'offline'):
-            return
-        if request.path.startswith('/api/'):
-            from flask import jsonify
-            return jsonify({'error': 'Cloud is currently unreachable.'}), 503
-        return render_template('offline.html')
-
 # ── Routes ───────────────────────────────────────────────────────────────────
 
 @app.route('/')
-def index():
-    # Redirect to proper page if logged in, otherwise login
-    if 'user' in session:
-        if session['user'].get('role') == 'Employee':
-            return redirect(url_for('dtr'))
-        return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
+@app.route('/scanner')
+@app.route('/kiosk')
+def scanner_portal():
+    """Biometric Fingerprint Scanner Kiosk Portal."""
+    return render_template('kiosk.html')
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user' in session:
         if session['user'].get('role') == 'Employee':
-            return redirect(url_for('dtr'))
-        return redirect(url_for('dashboard'))
+            return redirect(url_for('scanner_portal'))
+        return redirect(url_for('enrollment'))
 
     if request.method == 'POST':
         email    = request.form.get('email', '').strip()
@@ -110,8 +81,8 @@ def login():
                     'employee_id': emp['employee_id']
                 }
                 if emp['role'] == 'Employee':
-                    return redirect(url_for('dtr'))
-                return redirect(url_for('dashboard'))
+                    return redirect(url_for('scanner_portal'))
+                return redirect(url_for('enrollment'))
                 
         flash('Invalid username or password.', 'error')
 
@@ -121,9 +92,8 @@ def login():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # index.html is the shell (sidebar + topbar + content div)
-    # Pass the session user so Jinja can render the name/initials
-    return render_template('index.html', user=session['user'])
+    return redirect(url_for('enrollment'))
+
 
 
 # Serve page fragments loaded dynamically via jQuery $.load()
@@ -140,6 +110,15 @@ def employees():
     if session['user'].get('role') != 'HR':
         return redirect(url_for('dashboard'))
     return render_template('index.html', user=session['user'], initial_page='/pages/employee.html', title='Employees')
+
+
+@app.route('/enrollment')
+@login_required
+def enrollment():
+    if session['user'].get('role') not in ['Admin', 'HR', 'HR Officer']:
+        return redirect(url_for('dashboard'))
+    return render_template('index.html', user=session['user'], initial_page='/pages/enrollment.html', title='Biometric Fingerprint Setup')
+
 
 
 @app.route('/payroll')

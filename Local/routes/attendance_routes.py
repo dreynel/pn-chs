@@ -13,24 +13,32 @@ def start_kiosk():
         KIOSK_STATE['last_scan'] = None
         KIOSK_STATE['last_error'] = None
     start_device_thread()
-    return jsonify({'message': 'Kiosk/Scanner background thread started'})
+    return jsonify({
+        'message': 'Kiosk/Scanner background thread started',
+        'status': KIOSK_STATE.get('status', 'disconnected'),
+        'device_connected': (KIOSK_STATE.get('status') == 'running')
+    })
 
 @attendance_bp.route('/stop', methods=['POST'])
 def stop_kiosk():
-    # Keep running or pause depending on need
     return jsonify({'message': 'Kiosk stopping instruction noted.'})
 
 @attendance_bp.route('/poll', methods=['GET'])
 def poll_kiosk():
     return jsonify({
-        'status': KIOSK_STATE['status'],
-        'last_scan': KIOSK_STATE['last_scan'],
-        'last_error': KIOSK_STATE['last_error'],
+        'status': KIOSK_STATE.get('status', 'disconnected'),
+        'last_scan': KIOSK_STATE.get('last_scan'),
+        'last_error': KIOSK_STATE.get('last_error'),
         'server_time': time.time()
     })
+
 @attendance_bp.route('/log', methods=['POST'])
 def log_attendance():
+    if KIOSK_STATE.get('status') != 'running':
+        return jsonify({'error': 'Fingerprint Scanner device not connected. Please connect USB reader.'}), 503
+
     data = request.get_json(force=True)
+
     employee_id = data.get('employee_id')
     log_type = data.get('log_type') # 'am_time_in', 'am_time_out', 'pm_time_in', 'pm_time_out'
     

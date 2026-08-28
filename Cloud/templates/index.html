@@ -306,7 +306,7 @@
     <nav>
       <div class="nav-section-label">Main</div>
 
-      {% if user.role in ['Admin', 'Finance', 'HR'] %}
+      {% if user.role in ['Admin', 'Principal', 'HR', 'HR Officer', 'Finance', 'Finance Officer'] %}
       <a href="#" class="nav-item active" onclick="navigate(event, this, 'Dashboard', '/pages/dashboard.html')">
         <div class="nav-icon">
           <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
@@ -317,7 +317,7 @@
       </a>
       {% endif %}
 
-      {% if user.role == 'HR' %}
+      {% if user.role in ['Admin', 'Principal', 'HR', 'HR Officer'] %}
       <a href="#" class="nav-item" onclick="navigate(event, this, 'Employees', '/pages/employee.html')">
         <div class="nav-icon">
           <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
@@ -328,9 +328,16 @@
       </a>
       {% endif %}
 
+      <a href="#" class="nav-item" onclick="navigate(event, this, 'Leave Management', '/pages/leaves.html')">
+        <div class="nav-icon">
+          <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <span class="label">Leave Management</span>
+      </a>
 
-
-      {% if user.role == 'Finance' %}
+      {% if user.role in ['Admin', 'Principal', 'Finance', 'Finance Officer'] %}
       <a href="#" class="nav-item" onclick="navigate(event, this, 'Payroll Processing', '/pages/payroll.html')">
         <div class="nav-icon">
           <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
@@ -341,7 +348,7 @@
       </a>
       {% endif %}
 
-      {% if user.role == 'Admin' %}
+      {% if user.role in ['Admin', 'Principal'] %}
       <a href="#" class="nav-item" onclick="navigate(event, this, 'Payroll Approvals', '/pages/payroll_approval.html')">
         <div class="nav-icon">
           <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
@@ -352,7 +359,18 @@
       </a>
       {% endif %}
 
-      {% if user.role == 'Finance' %}
+      {% if user.role in ['Admin', 'Principal', 'Finance', 'Finance Officer', 'HR', 'HR Officer'] %}
+      <a href="#" class="nav-item" onclick="navigate(event, this, 'Salary Grades', '/pages/salary_grades.html')">
+        <div class="nav-icon">
+          <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <span class="label">Salary Grades</span>
+      </a>
+      {% endif %}
+
+      {% if user.role in ['Admin', 'Principal', 'Finance', 'Finance Officer'] %}
       <a href="#" class="nav-item" onclick="navigate(event, this, 'Global Registry', '/pages/registry.html')">
         <div class="nav-icon">
           <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
@@ -363,36 +381,32 @@
       </a>
       {% endif %}
 
+
       <div class="nav-section-label">Reports</div>
 
-      {% if user.role in ['Admin', 'HR'] %}
       <a href="#" class="nav-sub-item" onclick="navigate(event, this, 'DTR', '/pages/dtr.html')">
         <span class="nav-sub-dot"></span>
-        <span class="label">DTR</span>
+        <span class="label">Daily Time Record (DTR)</span>
       </a>
+
+      {% if user.role in ['Admin', 'Principal', 'HR', 'HR Officer'] %}
       <a href="#" class="nav-sub-item" onclick="navigate(event, this, 'Biometric Logs', '/pages/logs.html')">
         <span class="nav-sub-dot"></span>
         <span class="label">Biometric Logs</span>
       </a>
       {% endif %}
 
-      {% if user.role in ['Admin', 'Finance'] %}
+      {% if user.role in ['Admin', 'Principal', 'Finance', 'Finance Officer'] %}
       <a href="#" class="nav-sub-item" onclick="navigate(event, this, 'Payroll Report', '/pages/payroll_report.html')">
         <span class="nav-sub-dot"></span>
         <span class="label">Payroll Report</span>
       </a>
       {% endif %}
 
-      {% if user.role == 'Employee' %}
-      <a href="#" class="nav-sub-item" onclick="navigate(event, this, 'My DTR', '/pages/dtr.html')">
-        <span class="nav-sub-dot"></span>
-        <span class="label">My DTR</span>
-      </a>
       <a href="#" class="nav-sub-item" onclick="navigate(event, this, 'My Payslip', '/pages/mypayslip.html')">
         <span class="nav-sub-dot"></span>
         <span class="label">My Payslip</span>
       </a>
-      {% endif %}
     </nav>
 
     <div class="sidebar-footer">
@@ -465,32 +479,50 @@
   <script>
     $(function () {
 
+      // Disable AJAX caching globally so all API and page calls fetch real-time data from database
+      $.ajaxSetup({ cache: false });
+
       // ── Load page into #pageContent ──────────────────────────────────────
       function loadPage(url) {
+        // Clean up open modals & Bootstrap backdrops to prevent page overlay freeze
+        try {
+          $('.modal').each(function() {
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+              const inst = bootstrap.Modal.getInstance(this);
+              if (inst) inst.hide();
+            }
+          });
+        } catch(e) {}
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open').css('overflow', '');
+        $('.reg-overlay').removeClass('open');
+
+        const cacheBustUrl = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
         $('#pageContent')
-          .html('<div class="page-loader"><div class="spinner"></div><span>Loading…</span></div>')
-          .load(url, function (response, status) {
-            console.log(status);
-            // if (status === 'error') {
-            //   $('#pageContent').html(
-            //     '<div class="page-loader" style="flex-direction:column;gap:6px;">' +
-            //     '<span style="color:#c0392b;font-size:13px;">Failed to load page</span>' +
-            //     '</div>'
-            //   );
-            // }
+          .html('<div class="page-loader"><div class="spinner"></div><span>Loading real-time data…</span></div>')
+          .load(cacheBustUrl, function (response, status, xhr) {
             $('#pageContent').scrollTop(0);
+            if (status === 'error') {
+              $('#pageContent').html(
+                '<div class="alert alert-danger m-4 shadow-sm rounded-3 p-4">' +
+                '<h6 class="fw-bold mb-1">Unable to load page content</h6>' +
+                '<p class="mb-0 text-muted small">Failed to fetch content from <code>' + url + '</code> (' + (xhr.statusText || 'Server Error') + ').</p>' +
+                '</div>'
+              );
+            }
           });
       }
 
       // ── Navigation ───────────────────────────────────────────────────────
       function navigate(el, title, url) {
         $('.nav-item, .nav-sub-item').removeClass('active');
-        $(el).addClass('active');
+        if (el) $(el).addClass('active');
         $('#pageTitle').text(title);
         $('#breadcrumb').text(title);
         loadPage(url);
         closeMobile();
       }
+
 
       // Expose navigate globally so inline onclick attrs can call it
       window.navigate = function (e, el, title, url) {

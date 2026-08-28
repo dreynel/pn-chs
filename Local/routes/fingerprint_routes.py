@@ -6,8 +6,10 @@ fingerprint_bp = Blueprint('fingerprints', __name__, url_prefix='/api/fingerprin
 
 @fingerprint_bp.route('/enroll/<emp_id>/<int:finger_index>', methods=['POST'])
 def start_enrollment(emp_id, finger_index):
-    # Insert an enrollment task into tblenrollment_tasks.
-    # The local app will poll this task and execute it.
+    from flask import session
+    if 'user' not in session or session['user'].get('role') not in ['Admin', 'HR', 'HR Officer']:
+        return jsonify({'error': 'Unauthorized. Admin or HR login required.'}), 401
+
     try:
         with db_cursor(commit=True) as (conn, cur):
             # Force cancel any stuck pending task to avoid 409 locked scanner error
@@ -22,6 +24,7 @@ def start_enrollment(emp_id, finger_index):
         return jsonify({'message': 'Enrollment task queued.', 'task_id': task_id}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @fingerprint_bp.route('/enroll_status', methods=['GET'])
 def get_status():
@@ -132,3 +135,18 @@ def enroll_complete():
         return jsonify({'message': 'Enrollment complete recorded'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@fingerprint_bp.route('/clear/<emp_id>/<int:finger_index>', methods=['DELETE'])
+def clear_fingerprint(emp_id, finger_index):
+    from flask import session
+    if 'user' not in session or session['user'].get('role') not in ['Admin', 'HR', 'HR Officer']:
+        return jsonify({'error': 'Unauthorized. Admin or HR login required.'}), 401
+
+    try:
+        with db_cursor(commit=True) as (conn, cur):
+            cur.execute("DELETE FROM fingerprints WHERE employee_id=%s AND finger_index=%s", (emp_id, finger_index))
+        return jsonify({'message': 'Fingerprint cleared successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+

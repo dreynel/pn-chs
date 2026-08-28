@@ -635,7 +635,8 @@
         <td class="num">${e.dtr_filed ? '<span class="dtr-pill full">OK</span>' : '<span class="dtr-pill absent">NO LOGS</span>'}</td>
         <td class="num amt-earn">${fmt(e.total_gross)}</td>
         <td class="num amt-deduct">${fmt(e.total_deduct)}</td>
-        <td class="num amt-net">${fmt(e.net_pay)}</td>
+        <td class="num amt-net">${fmt(e.net_pay)}${e.below_net_floor ? '<br><span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size:9px;" title="Net Pay below DepEd ₱5,000 monthly threshold (₱2,500 semi-monthly)">Below ₱2.5k Floor</span>' : ''}</td>
+
         <td style="text-align:center;">
           <button onclick="event.stopPropagation();showPayslip('${e.id}')" title="View Payslip"
             style="background:var(--navy-light);border:1.5px solid #c5d8f5;border-radius:7px;padding:5px 10px;cursor:pointer;color:var(--navy-mid);font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;transition:all .15s;" onmouseover="this.style.background='var(--navy)';this.style.color='#fff'" onmouseout="this.style.background='var(--navy-light)';this.style.color='var(--navy-mid)'">
@@ -900,6 +901,15 @@
     })();
 
     $('#btnNewDoc').on('click', function () {
+      const now = new Date();
+      const curY = now.getFullYear();
+      const curM = now.getMonth() + 1;
+      const curH = now.getDate() <= 15 ? 1 : 2;
+
+      $('#npYear').val(curY);
+      $('#npMonth').val(curM);
+      $(`input[name="npHalf"][value="${curH}"]`).prop('checked', true);
+
       $('#npError').hide();
       $('#confirmNewPayroll').prop('disabled', false).html('<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> Generate Payroll');
       $('#newPayrollModal').addClass('open');

@@ -415,6 +415,8 @@
             <div class="info-grid">
               <div class="info-field"><label>First Name</label><span id="dFirstName">–</span></div>
               <div class="info-field"><label>Last Name</label><span id="dLastName">–</span></div>
+              <div class="info-field"><label>Employee Type</label><span id="dEmployeeType">–</span></div>
+              <div class="info-field"><label>System Role</label><span id="dSystemRole">–</span></div>
               <div class="info-field"><label>Position</label><span id="dDesignation">–</span></div>
               <div class="info-field"><label>Birthday</label><span id="dBirthday">–</span></div>
               <div class="info-field"><label>Email Address</label><span id="dEmail">–</span></div>
@@ -481,14 +483,25 @@
       <div class="form-section-title">Personal Information</div>
       <div class="form-grid">
         <div class="form-group"><label>Employee ID</label><input type="text" id="fEmployeeId" placeholder="Auto-generated" disabled></div>
+        <div class="form-group"><label>Employee Type *</label>
+          <select id="fEmployeeType">
+            <option value="Faculty">Faculty</option>
+            <option value="Non-Teaching Staff">Non-Teaching Staff</option>
+          </select>
+        </div>
         <div class="form-group"><label>First Name *</label><input type="text" id="fFirstName" placeholder="Maria"></div>
         <div class="form-group"><label>Last Name *</label><input type="text" id="fLastName" placeholder="Santos"></div>
         <div class="form-group">
-          <label>Position *</label>
-          <select id="fDesignation">
-            <option value="">Select Position</option>
-            <option value="Faculty">Faculty</option>
-            <option value="Staff">Staff</option>
+          <label>Position / Title *</label>
+          <input type="text" id="fDesignation" placeholder="e.g. Teacher, Janitor">
+        </div>
+        <div class="form-group">
+          <label>System Role *</label>
+          <select id="fSystemRole">
+            <option value="Employee">Employee (Basic Access)</option>
+            <option value="HR Officer">HR Officer (HR Access)</option>
+            <option value="Finance Officer">Finance Officer (Finance Access)</option>
+            <option value="Principal">Principal (Admin Access)</option>
           </select>
         </div>
         <div class="form-group"><label>Birthday *</label><input type="date" id="fBirthday"></div>
@@ -657,6 +670,8 @@
     $('#detailSub').text(emp.designation + ' · ' + emp.id);
     $('#dFirstName').text(emp.first_name);
     $('#dLastName').text(emp.last_name);
+    $('#dEmployeeType').text(emp.employee_type || 'Faculty');
+    $('#dSystemRole').text(emp.system_role || 'Employee');
     $('#dDesignation').text(emp.designation);
     $('#dBirthday').text(fmtDate(emp.birthday));
     $('#dEmail').text(emp.email);
@@ -786,7 +801,9 @@
   $(document).on('click', '#btnAddPh', function () { addPhRow(); });
 
   function clearForm() {
-    $('#fEmployeeId, #fFirstName, #fLastName, #fDesignation, #fBirthday, #fEmail, #fContact, #fAddress').val('');
+    $('#fEmployeeId, #fFirstName, #fLastName, #fDesignation, #fEmployeeType, #fSystemRole, #fBirthday, #fEmail, #fContact, #fAddress').val('');
+    $('#fEmployeeType').val('Faculty');
+    $('#fSystemRole').val('Employee');
     $('#phFormRows').empty();
   }
 
@@ -817,6 +834,8 @@
 
     $.get(API + '/' + selectedId, function (emp) {
       $('#fEmployeeId').val(emp.id).prop('disabled', true);
+      $('#fEmployeeType').val(emp.employee_type || 'Faculty');
+      $('#fSystemRole').val(emp.system_role || 'Employee');
       $('#fFirstName').val(emp.first_name);
       $('#fLastName').val(emp.last_name);
       $('#fDesignation').val(emp.designation);
@@ -858,6 +877,8 @@
 
     const payload = {
       employee_id: $('#fEmployeeId').val().trim(),
+      employee_type: $('#fEmployeeType').val(),
+      system_role: $('#fSystemRole').val(),
       first_name:  $('#fFirstName').val().trim(),
       last_name:   $('#fLastName').val().trim(),
       designation: $('#fDesignation').val().trim(),

@@ -428,8 +428,12 @@
             <div class="info-grid">
               <div class="info-field"><label>First Name</label><span id="dFirstName">–</span></div>
               <div class="info-field"><label>Last Name</label><span id="dLastName">–</span></div>
+              <div class="info-field"><label>Employee Type</label><span id="dEmployeeType">–</span></div>
+              <div class="info-field"><label>System Role</label><span id="dSystemRole">–</span></div>
               <div class="info-field"><label>Position</label><span id="dDesignation">–</span></div>
+              <div class="info-field"><label>Salary Grade / Step</label><span id="dSalaryGrade">–</span></div>
               <div class="info-field"><label>Birthday</label><span id="dBirthday">–</span></div>
+
               <div class="info-field"><label>Email Address</label><span id="dEmail">–</span></div>
               <div class="info-field"><label>Contact Number</label><span id="dContact">–</span></div>
             </div>
@@ -467,14 +471,19 @@
         <div class="section-card">
           <div class="section-card-header">
             <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--navy-mid)"><path stroke-linecap="round" stroke-linejoin="round" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/></svg>
-            <span class="section-card-title">Biometrics</span>
+            <span class="section-card-title">Biometric Enrollment Status</span>
           </div>
           <div class="section-card-body" style="padding:14px;">
             <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;" id="fingerTabs">
               <!-- Rendered via JS -->
             </div>
+            <div style="margin-top:12px; padding:10px 14px; background:var(--navy-light); border-radius:10px; font-size:11px; color:var(--navy); display:flex; align-items:center; gap:8px;">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>Fingerprint enrollment is performed locally on the physical <strong>Local Kiosk Station</strong> connected to the USB scanner.</span>
+            </div>
           </div>
         </div>
+
 
       </div>
     </div>
@@ -494,16 +503,126 @@
       <div class="form-section-title">Personal Information</div>
       <div class="form-grid">
         <div class="form-group"><label>Employee ID</label><input type="text" id="fEmployeeId" placeholder="Auto-generated" disabled></div>
+        <div class="form-group"><label>Employee Type *</label>
+          <select id="fEmployeeType">
+            <option value="TEACHING">Teaching Personnel (Faculty)</option>
+            <option value="NON_TEACHING">Non-Teaching Personnel (Staff)</option>
+          </select>
+        </div>
         <div class="form-group"><label>First Name *</label><input type="text" id="fFirstName" placeholder="Maria"></div>
         <div class="form-group"><label>Last Name *</label><input type="text" id="fLastName" placeholder="Santos"></div>
         <div class="form-group">
-          <label>Position *</label>
-          <select id="fDesignation">
-            <option value="">Select Position</option>
-            <option value="Faculty">Faculty</option>
-            <option value="Staff">Staff</option>
+          <label>Position Tag (Preset)</label>
+          <select id="fPositionTag" onchange="onPositionTagChange()">
+            <option value="">-- Custom / Manual Title --</option>
+            
+            <optgroup label="Teaching Personnel (Faculty)">
+              <option value="11|Teacher I">Teacher I (SG 11)</option>
+              <option value="12|Teacher II">Teacher II (SG 12)</option>
+              <option value="13|Teacher III">Teacher III (SG 13)</option>
+              <option value="14|Teacher IV">Teacher IV (SG 14)</option>
+              <option value="15|Teacher V">Teacher V (SG 15)</option>
+              <option value="16|Teacher VI">Teacher VI (SG 16)</option>
+              <option value="17|Teacher VII">Teacher VII (SG 17)</option>
+              <option value="18|Master Teacher I">Master Teacher I (SG 18)</option>
+              <option value="19|Master Teacher II">Master Teacher II (SG 19)</option>
+              <option value="20|Master Teacher III">Master Teacher III (SG 20)</option>
+              <option value="21|Master Teacher IV">Master Teacher IV (SG 21)</option>
+              <option value="19|Principal I">Principal I (SG 19)</option>
+              <option value="20|Principal II">Principal II (SG 20)</option>
+              <option value="21|Principal III">Principal III (SG 21)</option>
+              <option value="22|Principal IV">Principal IV (SG 22)</option>
+            </optgroup>
+
+            <optgroup label="Non-Teaching Personnel (Staff & Admin)">
+              <option value="1|Administrative Aide I (Utility Worker)">Administrative Aide I / Utility Worker (SG 1)</option>
+              <option value="3|Administrative Aide III (Driver I)">Administrative Aide III / Driver I (SG 3)</option>
+              <option value="4|Administrative Aide IV (Clerk I)">Administrative Aide IV / Clerk I (SG 4)</option>
+              <option value="6|Administrative Aide VI (Clerk III)">Administrative Aide VI / Clerk III (SG 6)</option>
+              <option value="7|Administrative Assistant I">Administrative Assistant I (SG 7)</option>
+              <option value="8|Administrative Assistant II (Bookkeeper)">Administrative Assistant II / Bookkeeper (SG 8)</option>
+              <option value="9|Administrative Assistant III (Sr. Bookkeeper)">Administrative Assistant III / Sr. Bookkeeper (SG 9)</option>
+              <option value="10|Nurse I">Nurse I / Guidance Coordinator (SG 10)</option>
+              <option value="11|Administrative Officer I (HR Aide)">Administrative Officer I / HR Aide (SG 11)</option>
+              <option value="11|Guidance Counselor I">Guidance Counselor I (SG 11)</option>
+              <option value="12|Guidance Counselor II">Guidance Counselor II (SG 12)</option>
+              <option value="13|Guidance Counselor III">Guidance Counselor III (SG 13)</option>
+              <option value="14|Administrative Officer IV (HRMO II)">Administrative Officer IV / HRMO II (SG 14)</option>
+              <option value="15|Accountant I">Accountant I / IT Officer I (SG 15)</option>
+              <option value="16|Administrative Officer V (Cashier III)">Administrative Officer V / Cashier III (SG 16)</option>
+              <option value="18|Accountant II">Accountant II / Budget Officer (SG 18)</option>
+              <option value="19|Accountant III">Accountant III (SG 19)</option>
+            </optgroup>
           </select>
         </div>
+
+        <div class="form-group">
+          <label>Position / Title *</label>
+          <input type="text" id="fDesignation" placeholder="e.g. Teacher I, Master Teacher II">
+        </div>
+
+        <div class="form-group">
+          <label>Salary Grade</label>
+          <select id="fSalaryGrade" onchange="onSGStepChange()">
+            <option value="">None / Custom</option>
+            <option value="1">SG 1</option>
+            <option value="2">SG 2</option>
+            <option value="3">SG 3</option>
+            <option value="4">SG 4</option>
+            <option value="5">SG 5</option>
+            <option value="6">SG 6</option>
+            <option value="7">SG 7</option>
+            <option value="8">SG 8</option>
+            <option value="9">SG 9</option>
+            <option value="10">SG 10</option>
+            <option value="11">SG 11 (Teacher I)</option>
+            <option value="12">SG 12 (Teacher II)</option>
+            <option value="13">SG 13 (Teacher III)</option>
+            <option value="14">SG 14 (Teacher IV)</option>
+            <option value="15">SG 15 (Teacher V)</option>
+            <option value="16">SG 16 (Teacher VI)</option>
+            <option value="17">SG 17 (Teacher VII)</option>
+            <option value="18">SG 18 (Master Teacher I)</option>
+            <option value="19">SG 19 (MT II / Principal I)</option>
+            <option value="20">SG 20 (MT III / Principal II)</option>
+            <option value="21">SG 21 (MT IV / Principal III)</option>
+            <option value="22">SG 22 (Principal IV)</option>
+            <option value="23">SG 23</option>
+            <option value="24">SG 24</option>
+            <option value="25">SG 25</option>
+            <option value="26">SG 26</option>
+            <option value="27">SG 27</option>
+            <option value="28">SG 28</option>
+            <option value="29">SG 29</option>
+            <option value="30">SG 30</option>
+            <option value="31">SG 31</option>
+            <option value="32">SG 32</option>
+            <option value="33">SG 33</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Step</label>
+          <select id="fStep" onchange="onSGStepChange()">
+            <option value="1">Step 1</option>
+            <option value="2">Step 2</option>
+            <option value="3">Step 3</option>
+            <option value="4">Step 4</option>
+            <option value="5">Step 5</option>
+            <option value="6">Step 6</option>
+            <option value="7">Step 7</option>
+            <option value="8">Step 8</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>System Role *</label>
+          <select id="fSystemRole">
+            <option value="Employee">Employee (Basic Access)</option>
+            <option value="HR Officer">HR Officer (HR Access)</option>
+            <option value="Finance Officer">Finance Officer (Finance Access)</option>
+            <option value="Principal">Principal (Admin Access)</option>
+          </select>
+        </div>
+
         <div class="form-group"><label>Birthday *</label><input type="date" id="fBirthday"></div>
         <div class="form-group"><label>Email Address *</label><input type="email" id="fEmail" placeholder="email@school.edu.ph"></div>
         <div class="form-group"><label>Contact Number *</label><input type="text" id="fContact" placeholder="+63 9XX XXX XXXX"></div>
@@ -668,8 +787,12 @@
     $('#detailSub').text(emp.designation + ' · ' + emp.id);
     $('#dFirstName').text(emp.first_name);
     $('#dLastName').text(emp.last_name);
+    $('#dEmployeeType').text(emp.employee_type || 'Faculty');
+    $('#dSystemRole').text(emp.system_role || 'Employee');
     $('#dDesignation').text(emp.designation);
+    $('#dSalaryGrade').text(emp.salary_grade ? `SG ${emp.salary_grade}, Step ${emp.step || 1}` : 'Custom / Unassigned');
     $('#dBirthday').text(fmtDate(emp.birthday));
+
     $('#dEmail').text(emp.email);
     $('#dContact').text(emp.contact);
     $('#dAddress').text(emp.address);
@@ -797,9 +920,62 @@
   $(document).on('click', '#btnAddPh', function () { addPhRow(); });
 
   function clearForm() {
-    $('#fEmployeeId, #fFirstName, #fLastName, #fDesignation, #fBirthday, #fEmail, #fContact, #fAddress').val('');
+    $('#fEmployeeId, #fFirstName, #fLastName, #fPositionTag, #fDesignation, #fEmployeeType, #fSalaryGrade, #fStep, #fSystemRole, #fBirthday, #fEmail, #fContact, #fAddress').val('');
+    $('#fEmployeeType').val('Faculty');
+    $('#fSystemRole').val('Employee');
+    $('#fStep').val('1');
     $('#phFormRows').empty();
   }
+
+  function onPositionTagChange() {
+    const val = $('#fPositionTag').val();
+    if (!val) return;
+    const parts = val.split('|');
+    const sg = parts[0];
+    const title = parts[1];
+
+    if (title) {
+      $('#fDesignation').val(title);
+      // Auto-set Employee Type
+      if (title.startsWith('Teacher') || title.startsWith('Master Teacher') || title.startsWith('Principal')) {
+        $('#fEmployeeType').val('TEACHING');
+      } else {
+        $('#fEmployeeType').val('NON_TEACHING');
+      }
+    }
+    if (sg) {
+      $('#fSalaryGrade').val(sg);
+      onSGStepChange();
+    }
+  }
+
+
+  function onSGStepChange() {
+    const sg = $('#fSalaryGrade').val();
+    const step = $('#fStep').val() || 1;
+    if (!sg) return;
+
+    $.get(`/api/salary_grades/lookup?salary_grade=${sg}&step=${step}`, function(res) {
+      if (res.monthly_basic !== undefined) {
+        // Ensure Basic Salary row exists in phFormRows
+        let bsRow = $('#phFormRows .ph-form-row').filter(function() {
+          return $(this).find('[data-ph-name]').val() === 'Basic Salary';
+        });
+        if (!bsRow.length) {
+          bsRow = $('#phFormRows .ph-form-row:first');
+        }
+        if (bsRow.length) {
+          bsRow.find('[data-ph-amount]').val(res.monthly_basic).trigger('input');
+        } else {
+          addPhRow({ pay_head: 'Basic Salary', amount: res.monthly_basic, category: 'Earning', mode: 'Amount', percentage_value: 0 });
+        }
+        if (res.position_title && !$('#fDesignation').val()) {
+          $('#fDesignation').val(res.position_title);
+        }
+      }
+    });
+  }
+
 
   // ── Add modal ─────────────────────────────────────────────────────────────
   function openAddModal() {
@@ -828,9 +1004,25 @@
 
     $.get(API + '/' + selectedId, function (emp) {
       $('#fEmployeeId').val(emp.id).prop('disabled', true);
+      $('#fEmployeeType').val(emp.employee_type || 'Faculty');
+      $('#fSalaryGrade').val(emp.salary_grade || '');
+      $('#fStep').val(emp.step || 1);
+      $('#fSystemRole').val(emp.system_role || 'Employee');
       $('#fFirstName').val(emp.first_name);
       $('#fLastName').val(emp.last_name);
       $('#fDesignation').val(emp.designation);
+
+      // Match preset option if applicable
+      const tagMatch = `${emp.salary_grade}|${emp.designation}`;
+      let matched = false;
+      $('#fPositionTag option').each(function() {
+        if ($(this).val() === tagMatch) {
+          $('#fPositionTag').val(tagMatch);
+          matched = true;
+        }
+      });
+      if (!matched) $('#fPositionTag').val('');
+
       $('#fBirthday').val(emp.birthday);
       $('#fEmail').val(emp.email);
       $('#fContact').val(emp.contact);
@@ -839,6 +1031,7 @@
       $('#modalTitle').text('Edit Employee');
       $('#formModal').addClass('open');
     });
+
   }
 
   function closeFormModal() { $('#formModal').removeClass('open'); }
@@ -869,6 +1062,10 @@
 
     const payload = {
       employee_id: $('#fEmployeeId').val().trim(),
+      employee_type: $('#fEmployeeType').val(),
+      salary_grade: $('#fSalaryGrade').val() || null,
+      step: $('#fStep').val() || 1,
+      system_role: $('#fSystemRole').val(),
       first_name:  $('#fFirstName').val().trim(),
       last_name:   $('#fLastName').val().trim(),
       designation: $('#fDesignation').val().trim(),
@@ -878,6 +1075,7 @@
       address:     $('#fAddress').val().trim(),
       pay_heads,
     };
+
 
     if (!payload.first_name || !payload.last_name || !payload.designation) {
       toast('Please fill in all required fields.', 'error'); return;
@@ -1013,15 +1211,18 @@
   });
 
   // ── Expose functions used by inline onclick attrs ─────────────────────────
-  window.openAddModal     = openAddModal;
-  window.openEditModal    = openEditModal;
-  window.closeFormModal   = closeFormModal;
-  window.openDeleteConfirm= openDeleteConfirm;
-  window.confirmDelete    = confirmDelete;
-  window.saveEmployee     = saveEmployee;
-  window.addPhRow         = addPhRow;
-  window.openEnrollModal  = openEnrollModal;
-  window.cancelEnrollment = cancelEnrollment;
+  window.openAddModal        = openAddModal;
+  window.openEditModal       = openEditModal;
+  window.closeFormModal      = closeFormModal;
+  window.openDeleteConfirm   = openDeleteConfirm;
+  window.confirmDelete       = confirmDelete;
+  window.saveEmployee        = saveEmployee;
+  window.addPhRow            = addPhRow;
+  window.openEnrollModal     = openEnrollModal;
+  window.cancelEnrollment    = cancelEnrollment;
+  window.onPositionTagChange = onPositionTagChange;
+  window.onSGStepChange      = onSGStepChange;
+
 
   // ── Init ──────────────────────────────────────────────────────────────────
   console.log('Employee script initialized.');

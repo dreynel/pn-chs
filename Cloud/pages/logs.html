@@ -143,6 +143,7 @@
 </div>
 
 <script>
+(function() {
   let rawLogs = [];
 
   function renderBiometricLogs(query = '') {
@@ -231,6 +232,8 @@
     });
   }
 
+  window.loadBiometricLogs = loadBiometricLogs;
+
   // Bind change on date picker
   $(document).off('change', '#logDateFilter').on('change', '#logDateFilter', function() {
     loadBiometricLogs();
@@ -242,12 +245,11 @@
   });
 
   // Init - Default to today's date in local timezone
-  (function() {
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, '0');
-    const d = String(today.getDate()).padStart(2, '0');
-    $('#logDateFilter').val(`${y}-${m}-${d}`);
-  })();
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, '0');
+  const d = String(today.getDate()).padStart(2, '0');
+  $('#logDateFilter').val(`${y}-${m}-${d}`);
   loadBiometricLogs();
+})();
 </script>

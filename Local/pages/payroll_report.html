@@ -57,10 +57,6 @@
   .print-only { display: none; }
 
   @media print {
-    body * { visibility: hidden; }
-    .print-only { display: block; visibility: visible; }
-    #printableArea, #printableArea * { visibility: visible; }
-    #printableArea { position: absolute; left: 0; top: 0; width: 100%; }
     .rep-controls, .btn { display: none !important; }
     .table-card { box-shadow: none; border: none; overflow: visible; }
     table { width: 100%; min-width: 100%; border: 1px solid #000; border-collapse: collapse; }
@@ -251,7 +247,42 @@
   });
 
   $(document).off('click', '#btnPrintReport').on('click', '#btnPrintReport', function() {
-    window.print();
+    const content = document.getElementById('printableArea').innerHTML;
+    const win = window.open('', '_blank', 'width=1100,height=800');
+    win.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Payroll Report</title>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+      <style>
+        :root {
+          --navy:#1e3a5f; --navy-mid:#2a4f80; --navy-light:#e8f0fb;
+          --bg:#fff; --surface:#fff; --surface2:#fafaf8;
+          --border:#e2ddd6; --text:#1a1a2e;
+          --muted:#5a6272; --muted2:#9fa5b4;
+          --red:#c0392b; --green:#1a7f4b;
+        }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:'Plus Jakarta Sans',sans-serif; padding:20px; color:var(--text); font-size:12px; background:#fff; }
+        .table-card { box-shadow: none; border: none; overflow: visible; }
+        table { width: 100%; min-width: 100%; border: 1px solid #000; border-collapse: collapse; }
+        th, td { border: 1px solid #ccc; padding: 6px; font-size: 10px !important; }
+        th { background: #f0f0f0; text-align: left; font-weight: bold; }
+        td { white-space: normal; }
+        .num { font-variant-numeric: tabular-nums; text-align: right; }
+        .center { text-align: center; }
+        .amt-earn { color: #059669; font-weight: 600; }
+        .amt-deduct { color: #dc2626; font-weight: 600; }
+        .amt-net { font-weight: 700; color: var(--navy); }
+        .print-only { display: block !important; visibility: visible !important; }
+      </style>
+    </head>
+    <body>${content}</body>
+    </html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 600);
   });
 
   // Init

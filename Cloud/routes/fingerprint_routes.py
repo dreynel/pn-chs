@@ -14,12 +14,32 @@ def start_enrollment(emp_id, finger_index):
             cur.execute("UPDATE tblenrollment_tasks SET status='cancelled' WHERE status='pending'")
             
             cur.execute("""
-                INSERT INTO tblenrollment_tasks (employee_id, finger_index, status) 
-                VALUES (%s, %s, 'pending')
+                INSERT INTO tblenrollment_tasks (employee_id, finger_index, status, step, message) 
+                VALUES (%s, %s, 'pending', 1, 'Scanner ready. Please touch finger to sensor (Press 1 of 3)...')
             """, (emp_id, finger_index))
             task_id = cur.lastrowid
             
         return jsonify({'message': 'Enrollment task queued.', 'task_id': task_id}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@fingerprint_bp.route('/enroll_step', methods=['POST'])
+def update_enrollment_step():
+    data = request.json or {}
+    task_id = data.get('task_id')
+    step = int(data.get('step') or 1)
+    message = data.get('message', '')
+    error_msg = data.get('error', '')
+    status = data.get('status', 'pending')
+
+    try:
+        with db_cursor(commit=True) as (conn, cur):
+            cur.execute("""
+                UPDATE tblenrollment_tasks
+                SET step=%s, message=%s, error_message=%s, status=%s
+                WHERE id=%s
+            """, (step, message, error_msg, status, task_id))
+        return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -28,26 +48,29 @@ def get_status():
     # The frontend polls this to see if enrollment succeeded or failed
     try:
         with db_cursor() as (conn, cur):
-            # Find the most recent pending or recently completed task
-            cur.execute("SELECT status, finger_index, employee_id FROM tblenrollment_tasks ORDER BY id DESC LIMIT 1")
+            cur.execute("SELECT id, status, finger_index, employee_id, step, message, error_message FROM tblenrollment_tasks ORDER BY id DESC LIMIT 1")
             task = cur.fetchone()
             if not task:
-                return jsonify({'status': 'idle', 'message': '', 'error': ''})
+                return jsonify({'status': 'idle', 'message': '', 'error': '', 'step': 0})
                 
             status = task['status']
+            step = task.get('step') or 1
+            msg = task.get('message') or 'Please scan finger...'
+            err = task.get('error_message') or ''
+
             if status == 'pending':
-                return jsonify({'status': 'enrolling', 'message': 'Scanner is ready. Please scan...', 'error': '', 'step': 1})
+                return jsonify({'status': 'enrolling', 'message': msg, 'error': '', 'step': step})
             elif status == 'success':
-                # The frontend interprets success and handles it. We just deliver the state.
-                return jsonify({'status': 'success', 'message': 'Enrolled successfully!', 'error': ''})
+                return jsonify({'status': 'success', 'message': msg or 'Enrolled successfully!', 'error': '', 'step': 3})
             elif status == 'error':
-                return jsonify({'status': 'error', 'message': '', 'error': 'Enrollment failed.'})
+                return jsonify({'status': 'error', 'message': '', 'error': err or 'Enrollment failed.', 'step': 0})
             elif status == 'cancelled':
-                return jsonify({'status': 'error', 'message': '', 'error': 'Enrollment cancelled.'})
+                return jsonify({'status': 'error', 'message': '', 'error': 'Enrollment cancelled.', 'step': 0})
             else:
-                return jsonify({'status': 'idle', 'message': '', 'error': ''})
+                return jsonify({'status': 'idle', 'message': '', 'error': '', 'step': 0})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @fingerprint_bp.route('/enroll_cancel', methods=['POST'])
 def cancel_enrollment():
@@ -120,3 +143,13 @@ def enroll_complete():
         return jsonify({'message': 'Enrollment complete recorded'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@fingerprint_bp.route('/clear/<emp_id>/<int:finger_index>', methods=['DELETE'])
+def clear_fingerprint(emp_id, finger_index):
+    try:
+        with db_cursor(commit=True) as (conn, cur):
+            cur.execute("DELETE FROM fingerprints WHERE employee_id=%s AND finger_index=%s", (emp_id, finger_index))
+        return jsonify({'message': 'Fingerprint cleared successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+

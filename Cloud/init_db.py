@@ -147,6 +147,10 @@ CREATE TABLE IF NOT EXISTS tblleaves (
     leave_date DATE NOT NULL,
     leave_type VARCHAR(50) NOT NULL,
     status VARCHAR(20) DEFAULT 'Pending',
+    reason TEXT NULL,
+    reviewed_by VARCHAR(100) NULL,
+    reviewed_at DATETIME NULL,
+    filed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_leave_emp FOREIGN KEY (employee_id) REFERENCES tblemployee(employee_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 """
@@ -189,6 +193,98 @@ CREATE TABLE IF NOT EXISTS tblenrollment_tasks (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 """
 
+DDL_TIME_LOGS = """
+CREATE TABLE IF NOT EXISTS tbltime_logs (
+    log_id      INT          NOT NULL AUTO_INCREMENT,
+    employee_id VARCHAR(20)  NOT NULL,
+    work_date   DATE         NOT NULL,
+    am_time_in  TIME         NULL,
+    am_time_out TIME         NULL,
+    pm_time_in  TIME         NULL,
+    pm_time_out TIME         NULL,
+    PRIMARY KEY (log_id),
+    UNIQUE KEY idx_emp_date (employee_id, work_date),
+    CONSTRAINT fk_timelog_emp FOREIGN KEY (employee_id) REFERENCES tblemployee(employee_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+"""
+
+DDL_LEAVE_BALANCES = """
+CREATE TABLE IF NOT EXISTS tblleave_balances (
+    id            INT          NOT NULL AUTO_INCREMENT,
+    employee_id   VARCHAR(20)  NOT NULL UNIQUE,
+    vl_minutes    INT          NOT NULL DEFAULT 4800,
+    sl_minutes    INT          NOT NULL DEFAULT 4800,
+    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_leave_bal_emp FOREIGN KEY (employee_id) REFERENCES tblemployee (employee_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+"""
+
+DDL_LEAVE_TRANSACTIONS = """
+CREATE TABLE IF NOT EXISTS tblleave_transactions (
+    id               INT          NOT NULL AUTO_INCREMENT,
+    employee_id      VARCHAR(20)  NOT NULL,
+    date             DATE         NOT NULL,
+    leave_type       VARCHAR(20)  NOT NULL DEFAULT 'VL',
+    minutes          INT          NOT NULL,
+    transaction_type VARCHAR(20)  NOT NULL,
+    source           VARCHAR(30)  NOT NULL,
+    reference_id     VARCHAR(100) NULL,
+    remarks          TEXT         NULL,
+    created_by       VARCHAR(100) NULL,
+    created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_leave_tx_emp FOREIGN KEY (employee_id) REFERENCES tblemployee (employee_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+"""
+
+DDL_POLICY_CONFIG = """
+CREATE TABLE IF NOT EXISTS tblpolicy_config (
+    id           INT          NOT NULL AUTO_INCREMENT,
+    config_key   VARCHAR(100) NOT NULL UNIQUE,
+    config_value VARCHAR(255) NOT NULL,
+    description  TEXT         NULL,
+    updated_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+"""
+
+DDL_AUDIT_LOGS = """
+CREATE TABLE IF NOT EXISTS tblaudit_logs (
+    id           INT          NOT NULL AUTO_INCREMENT,
+    employee_id  VARCHAR(20)  NULL,
+    user_name    VARCHAR(100) NULL,
+    action       VARCHAR(50)  NOT NULL,
+    target_table VARCHAR(50)  NULL,
+    target_id    VARCHAR(100) NULL,
+    old_value    TEXT         NULL,
+    new_value    TEXT         NULL,
+    reason       TEXT         NULL,
+    created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+"""
+
+DDL_SALARY_GRADES = """
+CREATE TABLE IF NOT EXISTS tblsalary_grades (
+    id            INT            NOT NULL AUTO_INCREMENT,
+    salary_grade  INT            NOT NULL UNIQUE,
+    position_title VARCHAR(120)  NULL,
+    step_1        DECIMAL(12,2)  NOT NULL DEFAULT 0.00,
+    step_2        DECIMAL(12,2)  NOT NULL DEFAULT 0.00,
+    step_3        DECIMAL(12,2)  NOT NULL DEFAULT 0.00,
+    step_4        DECIMAL(12,2)  NOT NULL DEFAULT 0.00,
+    step_5        DECIMAL(12,2)  NOT NULL DEFAULT 0.00,
+    step_6        DECIMAL(12,2)  NOT NULL DEFAULT 0.00,
+    step_7        DECIMAL(12,2)  NOT NULL DEFAULT 0.00,
+    step_8        DECIMAL(12,2)  NOT NULL DEFAULT 0.00,
+    updated_at    DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+"""
+
+
 def _add_column_if_missing(cur, table, column, alter_sql):
     """Add a column only if it doesn't already exist (compatible with all MySQL versions)."""
     cur.execute(
@@ -218,9 +314,23 @@ def init():
         cur.execute(DDL_GLOBAL_PAYHEADS)
         cur.execute(DDL_STATUTORY_REGISTRY)
         cur.execute(DDL_ENROLLMENT_TASKS)
+        cur.execute(DDL_TIME_LOGS)
+        cur.execute(DDL_LEAVE_BALANCES)
+        cur.execute(DDL_LEAVE_TRANSACTIONS)
+        cur.execute(DDL_POLICY_CONFIG)
+        cur.execute(DDL_AUDIT_LOGS)
+        cur.execute(DDL_SALARY_GRADES)
 
         # ── Safe column migrations (works on all MySQL versions) ───────────────
         migrations = [
+            ('tblemployee',        'employee_type',   "ALTER TABLE tblemployee ADD COLUMN employee_type VARCHAR(50) DEFAULT 'NON_TEACHING' AFTER designation"),
+            ('tblemployee',        'salary_grade',    "ALTER TABLE tblemployee ADD COLUMN salary_grade INT NULL AFTER employee_type"),
+            ('tblemployee',        'step',            "ALTER TABLE tblemployee ADD COLUMN step INT DEFAULT 1 AFTER salary_grade"),
+            ('tblenrollment_tasks', 'step',           "ALTER TABLE tblenrollment_tasks ADD COLUMN step INT DEFAULT 1 AFTER status"),
+            ('tblenrollment_tasks', 'message',        "ALTER TABLE tblenrollment_tasks ADD COLUMN message VARCHAR(255) NULL AFTER step"),
+            ('tblenrollment_tasks', 'error_message',  "ALTER TABLE tblenrollment_tasks ADD COLUMN error_message VARCHAR(255) NULL AFTER message"),
+            ('tblpayroll',         'approved_by',     'ALTER TABLE tblpayroll ADD COLUMN approved_by VARCHAR(150) NULL AFTER remarks'),
+
             ('tblpayroll',         'approved_by',     'ALTER TABLE tblpayroll ADD COLUMN approved_by VARCHAR(150) NULL AFTER remarks'),
             ('tblpayroll',         'approved_at',     'ALTER TABLE tblpayroll ADD COLUMN approved_at DATETIME NULL AFTER approved_by'),
             ('tblpayroll_details', 'holiday_pay',     'ALTER TABLE tblpayroll_details ADD COLUMN holiday_pay DECIMAL(10,2) DEFAULT 0 AFTER other_earnings'),
@@ -233,6 +343,10 @@ def init():
             ('tblpayroll_details', 'is_negative',     'ALTER TABLE tblpayroll_details ADD COLUMN is_negative TINYINT(1) DEFAULT 0 AFTER net_pay'),
             ('tblpayroll_details', 'payheads_json',   'ALTER TABLE tblpayroll_details ADD COLUMN payheads_json JSON NULL AFTER dtr_filed'),
             ('tblpayroll_details', 'statutory_json',  'ALTER TABLE tblpayroll_details ADD COLUMN statutory_json JSON NULL AFTER payheads_json'),
+            ('tblpayroll_details', 'vl_tardiness_minutes', 'ALTER TABLE tblpayroll_details ADD COLUMN vl_tardiness_minutes INT DEFAULT 0 AFTER undertime_minutes'),
+            ('tblpayroll_details', 'vl_undertime_minutes', 'ALTER TABLE tblpayroll_details ADD COLUMN vl_undertime_minutes INT DEFAULT 0 AFTER vl_tardiness_minutes'),
+            ('tblpayroll_details', 'lwop_tardiness_minutes', 'ALTER TABLE tblpayroll_details ADD COLUMN lwop_tardiness_minutes INT DEFAULT 0 AFTER vl_undertime_minutes'),
+            ('tblpayroll_details', 'lwop_undertime_minutes', 'ALTER TABLE tblpayroll_details ADD COLUMN lwop_undertime_minutes INT DEFAULT 0 AFTER lwop_tardiness_minutes'),
             ('tblpayhead',         'mode',            "ALTER TABLE tblpayhead ADD COLUMN mode ENUM('Amount', 'Percentage') DEFAULT 'Amount' AFTER amount"),
             ('tblpayhead',         'percentage_value', "ALTER TABLE tblpayhead ADD COLUMN percentage_value DECIMAL(10, 2) DEFAULT 0.00 AFTER mode"),
             ('tblpayhead',         'description',      "ALTER TABLE tblpayhead ADD COLUMN description TEXT AFTER pay_head"),
@@ -240,6 +354,18 @@ def init():
             ('tblglobal_payheads', 'percentage_value', "ALTER TABLE tblglobal_payheads ADD COLUMN percentage_value DECIMAL(10, 2) DEFAULT 0.00 AFTER mode"),
             ('tblglobal_payheads', 'description',      "ALTER TABLE tblglobal_payheads ADD COLUMN description TEXT AFTER name"),
             ('tblstatutory_registry', 'config_mode',  "ALTER TABLE tblstatutory_registry ADD COLUMN config_mode ENUM('Amount', 'Percentage') DEFAULT 'Percentage' AFTER config_value"),
+            ('tbltime_logs',       'actual_classroom_teaching_minutes', 'ALTER TABLE tbltime_logs ADD COLUMN actual_classroom_teaching_minutes INT DEFAULT 0 AFTER pm_time_out'),
+            ('tbltime_logs',       'teaching_related_minutes', 'ALTER TABLE tbltime_logs ADD COLUMN teaching_related_minutes INT DEFAULT 0 AFTER actual_classroom_teaching_minutes'),
+            ('tbltime_logs',       'teaching_related_approved', 'ALTER TABLE tbltime_logs ADD COLUMN teaching_related_approved TINYINT(1) DEFAULT 1 AFTER teaching_related_minutes'),
+            ('tbltime_logs',       'tardiness_minutes', 'ALTER TABLE tbltime_logs ADD COLUMN tardiness_minutes INT DEFAULT 0 AFTER teaching_related_approved'),
+            ('tbltime_logs',       'undertime_minutes', 'ALTER TABLE tbltime_logs ADD COLUMN undertime_minutes INT DEFAULT 0 AFTER tardiness_minutes'),
+            ('tbltime_logs',       'vl_minutes_charged', 'ALTER TABLE tbltime_logs ADD COLUMN vl_minutes_charged INT DEFAULT 0 AFTER undertime_minutes'),
+            ('tbltime_logs',       'unpaid_minutes',   'ALTER TABLE tbltime_logs ADD COLUMN unpaid_minutes INT DEFAULT 0 AFTER vl_minutes_charged'),
+            ('tbltime_logs',       'remarks',          'ALTER TABLE tbltime_logs ADD COLUMN remarks TEXT NULL AFTER unpaid_minutes'),
+            ('tblleaves',          'reason',           'ALTER TABLE tblleaves ADD COLUMN reason TEXT NULL AFTER status'),
+            ('tblleaves',          'reviewed_by',      'ALTER TABLE tblleaves ADD COLUMN reviewed_by VARCHAR(100) NULL AFTER reason'),
+            ('tblleaves',          'reviewed_at',      'ALTER TABLE tblleaves ADD COLUMN reviewed_at DATETIME NULL AFTER reviewed_by'),
+            ('tblleaves',          'filed_at',         'ALTER TABLE tblleaves ADD COLUMN filed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER reviewed_at'),
         ]
         for table, col, sql in migrations:
             _add_column_if_missing(cur, table, col, sql)
@@ -255,10 +381,10 @@ def init():
         
         # Seed users
         users = [
-            ('admin', 'admin123', 'Overall Admin', 'Admin', None),
-            ('finance', 'finance123', 'Finance Dept', 'Finance', None),
-            ('hr', 'hr1234', 'HR Dept', 'HR', None),
-            ('bjohnlenard@gmail.com', 'EMP-001', 'John Lenard Bocal', 'Employee', 'EMP-001')
+            ('admin', 'admin123', 'John Lenard Bocal', 'Admin', 'EMP-001'),
+            ('hr', 'hr1234', 'John Lenard Bocal (HR)', 'HR', 'EMP-001'),
+            ('finance', 'finance123', 'John Lenard Bocal (Finance)', 'Finance', 'EMP-001'),
+            ('john.lenard@school.edu.ph', 'user123', 'John Lenard Bocal', 'Employee', 'EMP-001')
         ]
         for u in users:
             cur.execute("SELECT id FROM tblusers WHERE username=%s", (u[0],))
@@ -286,25 +412,94 @@ def init():
             if not cur.fetchone():
                 cur.execute("INSERT INTO tblholidays (holiday_date, holiday_name, holiday_type) VALUES (%s, %s, %s)", h)
 
-        # Seed Statutory Config
+        # Seed Statutory Config (Official Philippine Government DepEd Rules)
         stat_configs = [
-            ('PHIC_RATE', '0.05', 'Percentage', 'PhilHealth employee+employer combined rate'),
-            ('PHIC_CAP',  '5000.00', 'Amount', 'Maximum monthly PhilHealth total contribution'),
-            ('PHIC_FLOOR', '500.00', 'Amount', 'Minimum monthly PhilHealth total contribution'),
-            ('PAGIBIG_EE_RATE', '0.02', 'Percentage', 'Pag-IBIG employee rate'),
-            ('PAGIBIG_EE_CAP', '100.00', 'Amount', 'Maximum semi-monthly Pag-IBIG employee share'),
-            ('SSS_ENABLED', '1', 'Amount', 'Enable SSS calculations (1=Yes, 0=No)'),
-            ('BIR_ENABLED', '1', 'Amount', 'Enable Withholding Tax (1=Yes, 0=No)')
+            ('GSIS_EE_RATE', '0.09', 'Percentage', 'GSIS employee share rate (9% of basic salary)'),
+            ('PHILHEALTH_EE_RATE', '0.025', 'Percentage', 'PhilHealth employee share rate (2.5% of basic salary)'),
+            ('PAGIBIG_EE_AMOUNT', '200.00', 'Amount', 'Pag-IBIG employee monthly fixed contribution (₱200 cap)'),
+            ('BIR_ENABLED', '1', 'Amount', 'Enable BIR Withholding Tax (1=Yes, 0=No)')
         ]
         for k, v, m, d in stat_configs:
             cur.execute("SELECT id FROM tblstatutory_registry WHERE config_key=%s", (k,))
             if not cur.fetchone():
                 cur.execute("INSERT INTO tblstatutory_registry (config_key, config_value, config_mode, description) VALUES (%s, %s, %s, %s)", (k, v, m, d))
+            else:
+                cur.execute("UPDATE tblstatutory_registry SET config_value=%s, config_mode=%s, description=%s WHERE config_key=%s", (v, m, d, k))
+
+        # Seed Policy Configs for DepEd Rules
+        policy_configs = [
+            ('VL_DEDUCT_TARDINESS', '1', 'Treat tardiness as VL credit deduction first (1=Yes, 0=No)'),
+            ('VL_DEDUCT_UNDERTIME', '1', 'Treat undertime as VL credit deduction first (1=Yes, 0=No)'),
+            ('WORK_HOURS_PER_DAY', '8', 'Standard work hours per day'),
+            ('HABITUAL_TARDINESS_MONTHLY_COUNT', '10', 'Number of tardy occurrences per month for habitual threshold'),
+            ('HABITUAL_TARDINESS_CONSECUTIVE_MONTHS', '2', 'Number of consecutive months for habitual threshold'),
+            ('POLICY_EFFECTIVE_DATE', '2026-01-01', 'Effective date for DepEd attendance policy'),
+            ('ROUND_TARDINESS', '0', 'Whether to round tardiness/undertime minutes (0=No rounding)')
+        ]
+        for k, v, d in policy_configs:
+            cur.execute("SELECT id FROM tblpolicy_config WHERE config_key=%s", (k,))
+            if not cur.fetchone():
+                cur.execute("INSERT INTO tblpolicy_config (config_key, config_value, description) VALUES (%s, %s, %s)", (k, v, d))
+
+        # Seed leave balances for existing employees if missing
+        cur.execute("SELECT employee_id FROM tblemployee")
+        emps = cur.fetchall()
+        for emp in emps:
+            eid = emp['employee_id']
+            cur.execute("SELECT id FROM tblleave_balances WHERE employee_id=%s", (eid,))
+            if not cur.fetchone():
+                cur.execute("INSERT INTO tblleave_balances (employee_id, vl_minutes, sl_minutes) VALUES (%s, 4800, 4800)", (eid,))
+
+        # Seed Salary Grades (Official Government SSL Third Tranche)
+        salary_grade_matrix = [
+            (1, None, 14634, 14730, 14849, 14968, 15089, 15211, 15333, 15456),
+            (2, None, 15522, 15636, 15752, 15869, 15986, 16103, 16223, 16342),
+            (3, None, 16486, 16610, 16732, 16856, 16982, 17106, 17234, 17360),
+            (4, None, 17506, 17636, 17767, 17898, 18031, 18163, 18298, 18433),
+            (5, None, 18581, 18720, 18858, 18998, 19137, 19280, 19423, 19565),
+            (6, None, 19716, 19862, 20009, 20158, 20307, 20456, 20609, 20761),
+            (7, None, 20914, 21069, 21224, 21382, 21539, 21699, 21859, 22022),
+            (8, None, 22423, 22627, 22832, 23038, 23246, 23456, 23668, 23883),
+            (9, None, 24329, 24523, 24720, 24917, 25117, 25318, 25521, 25725),
+            (10, None, 26917, 27131, 27347, 27565, 27786, 28007, 28230, 28456),
+            (11, 'Teacher I', 31705, 31820, 32109, 32401, 32697, 32998, 33302, 33611),
+            (12, 'Teacher II', 33947, 34069, 34357, 34648, 34943, 35242, 35544, 35850),
+            (13, 'Teacher III', 36125, 36283, 36599, 36919, 37244, 37572, 37904, 38241),
+            (14, 'Teacher IV', 38764, 39141, 39523, 39910, 40300, 40696, 41097, 41503),
+            (15, 'Teacher V', 42178, 42594, 43015, 43442, 43874, 44310, 44753, 45202),
+            (16, 'Teacher VI', 45694, 46152, 46615, 47084, 47559, 48040, 48528, 49020),
+            (17, 'Teacher VII', 49562, 50066, 50576, 51092, 51614, 52144, 52678, 53221),
+            (18, 'Master Teacher I', 53818, 54371, 54933, 55499, 56075, 56657, 57246, 57842),
+            (19, 'Master Teacher II / Principal I', 59153, 59966, 60793, 61632, 62486, 63353, 64236, 65132),
+            (20, 'Master Teacher III / Principal II', 66052, 66970, 67904, 68853, 69818, 70772, 71727, 72671),
+            (21, 'Master Teacher IV / Principal III', 73303, 74337, 75388, 76456, 77542, 78645, 79692, 80831),
+            (22, 'Principal IV', 81796, 82963, 84151, 85356, 86582, 87746, 89011, 90295),
+            (23, None, 91306, 92622, 93962, 95330, 96823, 98341, 99883, 101318),
+            (24, None, 102603, 104209, 105841, 107500, 109185, 110898, 112533, 114301),
+            (25, None, 116643, 118469, 120326, 122212, 124131, 126079, 128061, 130073),
+            (26, None, 131807, 133870, 135968, 138100, 140268, 142469, 144707, 146983),
+            (27, None, 148940, 151273, 153644, 155906, 158353, 160235, 162752, 165310),
+            (28, None, 167129, 169752, 172418, 174797, 177545, 180339, 182660, 185537),
+            (29, None, 187531, 190482, 193480, 196528, 199624, 202005, 205191, 208430),
+            (30, None, 210718, 214038, 217207, 220425, 223691, 227224, 230595, 234240),
+            (31, None, 300961, 306691, 312532, 318182, 323938, 329989, 336092, 342310),
+            (32, None, 356237, 363257, 370418, 377359, 384805, 392400, 400150, 408055),
+            (33, None, 449157, 462329, 0, 0, 0, 0, 0, 0)
+        ]
+        for sg in salary_grade_matrix:
+            cur.execute("SELECT id FROM tblsalary_grades WHERE salary_grade=%s", (sg[0],))
+            if not cur.fetchone():
+                cur.execute(
+                    "INSERT INTO tblsalary_grades (salary_grade, position_title, step_1, step_2, step_3, step_4, step_5, step_6, step_7, step_8) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    sg
+                )
 
         conn.commit()
         cur.close()
         conn.close()
-        print("[OK] Tables created/migrated: tblemployee, tblpayhead, fingerprints, tblusers, tblpayroll, tblpayroll_details, tblholidays, tblleaves")
+        print("[OK] Tables created/migrated: tblemployee, tblpayhead, fingerprints, tblusers, tblpayroll, tblpayroll_details, tblholidays, tblleaves, tblleave_balances, tblleave_transactions, tblpolicy_config, tblaudit_logs, tblsalary_grades")
+
     except Error as e:
         print(f"[ERROR] Database error: {e}")
 

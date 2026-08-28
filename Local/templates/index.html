@@ -304,107 +304,27 @@
     </div>
 
     <nav>
-      <div class="nav-section-label">Main</div>
+      <div class="nav-section-label">Local Biometric Station</div>
 
-      {% if user.role in ['Admin', 'Finance', 'HR'] %}
-      <a href="#" class="nav-item active" onclick="navigate(event, this, 'Dashboard', '/pages/dashboard.html')">
-        <div class="nav-icon">
-          <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-          </svg>
-        </div>
-        <span class="label">Dashboard</span>
-      </a>
-      {% endif %}
-
-      {% if user.role == 'HR' %}
-      <a href="#" class="nav-item" onclick="navigate(event, this, 'Employees', '/pages/employee.html')">
-        <div class="nav-icon">
-          <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-          </svg>
-        </div>
-        <span class="label">Employees</span>
-      </a>
-      {% endif %}
-
-
-
-      {% if user.role == 'Finance' %}
-      <a href="#" class="nav-item" onclick="navigate(event, this, 'Payroll Processing', '/pages/payroll.html')">
-        <div class="nav-icon">
-          <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-          </svg>
-        </div>
-        <span class="label">Payroll Processing</span>
-      </a>
-      {% endif %}
-
-      {% if user.role in ['Admin', 'HR'] %}
-      <a href="/kiosk" target="_blank" class="nav-item">
+      <a href="#" class="nav-item active" onclick="navigate(event, this, 'Fingerprint Setup', '/pages/enrollment.html')">
         <div class="nav-icon">
           <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/>
           </svg>
         </div>
-        <span class="label">Launch Kiosk</span>
+        <span class="label">Fingerprint Setup</span>
       </a>
-      {% endif %}
 
-      {% if user.role == 'Admin' %}
-      <a href="#" class="nav-item" onclick="navigate(event, this, 'Payroll Approvals', '/pages/payroll_approval.html')">
+      <a href="/kiosk" target="_blank" class="nav-item">
         <div class="nav-icon">
           <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
           </svg>
         </div>
-        <span class="label">Payroll Approvals</span>
+        <span class="label">Launch Kiosk Portal</span>
       </a>
-      {% endif %}
-
-      {% if user.role in ['Admin', 'Finance'] %}
-      <a href="#" class="nav-item" onclick="navigate(event, this, 'Global Registry', '/pages/registry.html')">
-        <div class="nav-icon">
-          <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
-        </div>
-        <span class="label">Registry</span>
-      </a>
-      {% endif %}
-
-      <div class="nav-section-label">Reports</div>
-
-      {% if user.role in ['Admin', 'HR'] %}
-      <a href="#" class="nav-sub-item" onclick="navigate(event, this, 'DTR', '/pages/dtr.html')">
-        <span class="nav-sub-dot"></span>
-        <span class="label">DTR</span>
-      </a>
-      <a href="#" class="nav-sub-item" onclick="navigate(event, this, 'Biometric Logs', '/pages/logs.html')">
-        <span class="nav-sub-dot"></span>
-        <span class="label">Biometric Logs</span>
-      </a>
-      {% endif %}
-
-      {% if user.role in ['Admin', 'Finance'] %}
-      <a href="#" class="nav-sub-item" onclick="navigate(event, this, 'Payroll Report', '/pages/payroll_report.html')">
-        <span class="nav-sub-dot"></span>
-        <span class="label">Payroll Report</span>
-      </a>
-      {% endif %}
-
-      {% if user.role == 'Employee' %}
-      <a href="#" class="nav-sub-item" onclick="navigate(event, this, 'My DTR', '/pages/dtr.html')">
-        <span class="nav-sub-dot"></span>
-        <span class="label">My DTR</span>
-      </a>
-      <a href="#" class="nav-sub-item" onclick="navigate(event, this, 'My Payslip', '/pages/mypayslip.html')">
-        <span class="nav-sub-dot"></span>
-        <span class="label">My Payslip</span>
-      </a>
-      {% endif %}
     </nav>
+
 
     <div class="sidebar-footer">
       <div class="s-avatar" id="userAvatar">{{ user.name.split()[0][0] }}{{ user.name.split()[-1][0] }}</div>
@@ -519,8 +439,8 @@
       window.closeMobile = function () { $('#sidebar').removeClass('mobile-open'); $('#mobileOverlay').removeClass('show'); };
 
       // ── Load Initial Page ────────────────────────────────────────────────
-      const initialPage = "{{ initial_page|default('/pages/dashboard.html') }}";
-      const initialTitle = "{{ title|default('Dashboard') }}";
+      const initialPage = "{{ initial_page|default('/pages/enrollment.html') }}";
+      const initialTitle = "{{ title|default('Biometric Fingerprint Setup') }}";
       
       $('#pageTitle').text(initialTitle);
       $('#breadcrumb').text(initialTitle);
@@ -528,6 +448,7 @@
 
       // Mark the correct sidebar item as active
       $(`.nav-item[onclick*="${initialPage}"], .nav-sub-item[onclick*="${initialPage}"]`).addClass('active');
+
 
     });
   </script>
